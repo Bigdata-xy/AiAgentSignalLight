@@ -54,6 +54,7 @@ Results:
 - Portable packaging script exists as an initial skeleton.
 - Codex hook script template exists.
 - Codex hook script can invoke Agent from the development tree or portable `agent` directory.
+- Codex hook script writes `diagnostics/latest-hook-context.json` with event, mapped state, resolved Agent path, session, workspace, title, and raw payload details.
 - `tools/install-hooks.ps1` merges SignalLight commands into Codex `hooks.json`.
 - `tools/install-hooks.ps1` preserves unrelated user hooks and is idempotent under test.
 - `tools/uninstall-hooks.ps1` removes owned SignalLight hook entries.
@@ -64,6 +65,7 @@ Results:
 - Codex adapter path:
   - `hooks/codex-hook.ps1` maps Codex hook event names to generic SignalLight states.
   - The hook can call `SignalLight.Agent.exe` when packaged beside the tool.
+  - The hook records the latest hook context for troubleshooting.
   - Automatic hook installation exists, but still needs manual verification against a real Codex session and trust prompt.
 - App UI:
   - The traffic-light surface exists.

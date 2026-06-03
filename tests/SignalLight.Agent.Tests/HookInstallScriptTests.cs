@@ -46,6 +46,16 @@ public sealed class HookInstallScriptTests
         using var snapshot = JsonDocument.Parse(File.ReadAllText(snapshotPath));
         Assert.Equal("thinking", snapshot.RootElement.GetProperty("aggregateState").GetString());
         Assert.Equal(1, snapshot.RootElement.GetProperty("totalCount").GetInt32());
+
+        var diagnosticsPath = Path.Combine(signalRoot, "diagnostics", "latest-hook-context.json");
+        Assert.True(File.Exists(diagnosticsPath), "Expected hook execution to write latest-hook-context.json.");
+
+        using var diagnostics = JsonDocument.Parse(File.ReadAllText(diagnosticsPath));
+        Assert.Equal("UserPromptSubmit", diagnostics.RootElement.GetProperty("eventName").GetString());
+        Assert.Equal("running", diagnostics.RootElement.GetProperty("mappedState").GetString());
+        Assert.True(diagnostics.RootElement.GetProperty("agentFound").GetBoolean());
+        Assert.Equal("codex-session-1", diagnostics.RootElement.GetProperty("session").GetString());
+        Assert.Contains("Continue Phase 1", diagnostics.RootElement.GetProperty("rawPayload").GetString());
     }
 
     [Fact]
