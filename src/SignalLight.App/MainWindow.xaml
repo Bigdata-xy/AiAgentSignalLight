@@ -1,0 +1,20 @@
+﻿<Window x:Class="SignalLight.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Width="116"
+        Height="250"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ShowInTaskbar="False"
+        Topmost="True">
+    <Border Width="92" Height="230" CornerRadius="28" Background="#202124" Padding="10">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Ellipse x:Name="RedLamp" Width="50" Height="50" Fill="#4A1515" Margin="0,6" />
+            <Ellipse x:Name="YellowLamp" Width="50" Height="50" Fill="#4A3510" Margin="0,6" />
+            <Ellipse x:Name="GreenLamp" Width="50" Height="50" Fill="#123F23" Margin="0,6" />
+            <TextBlock x:Name="ProgressText" Text="0/0" Foreground="#E8EAED" FontSize="11" HorizontalAlignment="Center" Margin="0,8,0,0" />
+        </StackPanel>
+    </Border>
+</Window>
