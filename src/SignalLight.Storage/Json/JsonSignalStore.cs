@@ -81,9 +81,47 @@ public sealed class JsonSignalStore : ISignalStore
 
     private static void WriteAtomic<T>(string path, T value)
     {
-        var tempPath = path + ".tmp";
-        File.WriteAllText(tempPath, JsonSerializer.Serialize(value, JsonOptions));
-        File.Move(tempPath, path, overwrite: true);
+        var content = JsonSerializer.Serialize(value, JsonOptions);
+        Exception? lastError = null;
+        for (var attempt = 1; attempt <= 5; attempt++)
+        {
+            var tempPath = $"{path}.{Environment.ProcessId}.{Guid.NewGuid():N}.tmp";
+            try
+            {
+                File.WriteAllText(tempPath, content);
+                File.Move(tempPath, path, overwrite: true);
+                return;
+            }
+            catch (IOException ex)
+            {
+                lastError = ex;
+                TryDelete(tempPath);
+                Thread.Sleep(TimeSpan.FromMilliseconds(20 * attempt));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                lastError = ex;
+                TryDelete(tempPath);
+                Thread.Sleep(TimeSpan.FromMilliseconds(20 * attempt));
+            }
+        }
+
+        throw lastError ?? new IOException($"Failed to write {path}");
+    }
+
+    private static void TryDelete(string path)
+    {
+        try
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+        catch
+        {
+            // Best effort cleanup for failed concurrent writes.
+        }
     }
 
     private static string Sanitize(string value)

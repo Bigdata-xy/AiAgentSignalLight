@@ -13,7 +13,7 @@ if (-not $config.hooks) {
     exit 0
 }
 
-$events = @("UserPromptSubmit", "PermissionRequest", "Stop", "SessionStart")
+$events = @("UserPromptSubmit", "PreToolUse", "PostToolUse", "PermissionRequest", "Stop", "SessionStart")
 foreach ($event in $events) {
     if (-not ($config.hooks.PSObject.Properties.Name -contains $event)) {
         continue
@@ -47,5 +47,7 @@ foreach ($event in $events) {
 }
 
 Copy-Item -LiteralPath $hooksJson -Destination "$hooksJson.bak" -Force
-Set-Content -LiteralPath $hooksJson -Value ($config | ConvertTo-Json -Depth 20) -Encoding UTF8
+$json = $config | ConvertTo-Json -Depth 20
+$encoding = New-Object System.Text.UTF8Encoding($false)
+[System.IO.File]::WriteAllText($hooksJson, $json, $encoding)
 Write-Host "SignalLight hooks removed from $hooksJson"

@@ -5,14 +5,14 @@ Date: 2026-06-03
 Use this checklist to validate the real local Phase 1 loop:
 
 ```text
-Codex hook -> codex-hook.ps1 -> SignalLight.Agent -> JSON snapshot -> WPF refresh
+Codex hook -> codex-hook.ps1 -> JSON snapshot -> WPF refresh
 ```
 
 ## Preconditions
 
 - `dotnet build SignalLight.sln` passes.
 - `dotnet test` passes.
-- `SignalLight.App.exe` and `SignalLight.Agent.exe` exist under `src/*/bin/Debug`.
+- `SignalLight.App.dll` and `SignalLight.Agent.dll` exist under `src/*/bin/Debug`.
 - Codex can access the configured `hooks.json`.
 
 ## Steps

@@ -9,9 +9,11 @@ public static class CodexHookEventMapper
         return codexEventName switch
         {
             "UserPromptSubmit" => SignalEventType.TaskStarted,
+            "PreToolUse" => SignalEventType.TaskStarted,
+            "PostToolUse" => SignalEventType.TaskStarted,
             "PermissionRequest" => SignalEventType.UserActionRequired,
             "Stop" => SignalEventType.TaskCompleted,
-            "SessionStart" => SignalEventType.TaskCompleted,
+            "SessionStart" => SignalEventType.Unknown,
             _ => SignalEventType.Unknown
         };
     }

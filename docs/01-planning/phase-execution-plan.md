@@ -1,13 +1,13 @@
-# SignalLight 阶段执行计划
+﻿# SignalLight 阶段执行计划
 
 ## 1. 执行目标
 
-本计划面向通用 AI / Agent 交通信号灯产品 `SignalLight`。产品必须保留交通红绿灯主 UI，同时具备低依赖、便携部署、通用适配和可诊断能力。
+本计划面向通用 AI / Agent 交通信号灯产品 `SignalLight`。产品必须保留红、黄、绿交通灯作为主 UI，同时具备低依赖、便携部署、通用适配和可诊断能力。
 
 核心目标：
 
 - 第一阶段优先支持 Codex hooks。
-- 架构上不绑定 Codex，后续可扩展到 AI 网站、CLI Agent、自建 Agent 和浏览器插件。
+- 架构上不绑定 Codex，后续可扩展到 AI 网站、CLI Agent、自建 Agent、IDE 插件和浏览器插件。
 - 默认使用 JSON 本地存储，不强依赖 SQLite、后台服务或额外运行时。
 - 发布形态优先支持便携包。
 - 一次配置后，任意项目或任意接入源都能方便使用。
@@ -16,18 +16,18 @@
 
 | 阶段 | 名称 | 目标 | 结果 |
 |---|---|---|---|
-| Phase 0 | 项目初始化 | 建立工程骨架和协议边界 | 可编译、可测试的空壳项目 |
+| Phase 0 | 项目初始化 | 建立工程骨架和协议边界 | 可编译、可测试的基础项目 |
 | Phase 1 | Codex MVP | 实现 Codex hooks 到交通灯状态 | 本地可用的最小闭环 |
-| Phase 2 | 多会话和诊断 | 完成会话抽屉、诊断页、信任引导 | 可日常使用 |
-| Phase 3 | 通用适配器 | 支持 CLI / 文件 / 通用事件上报 | 不再只是 Codex 工具 |
+| Phase 2 | 多会话和诊断 | 完成任务徽标抽屉、诊断导出、信任引导和托盘入口 | 可日常使用的本地工具 |
+| Phase 3 | 通用适配器 | 支持 CLI、文件和通用事件上报 | 不再只是 Codex 工具 |
 | Phase 4 | 浏览器适配 | 接入 AI 网站等待状态 | 覆盖网页 AI 场景 |
-| Phase 5 | 发布质量 | 打包、升级、文档、测试闭环 | 可分发版本 |
+| Phase 5 | 发布质量 | 打包、安装器、文档、测试和诊断闭环 | 可分发版本 |
 
 ## 3. Phase 0：项目初始化
 
 ### 目标
 
-建立新项目基础结构，避免沿用原项目命名和文件协议。
+建立新项目的基础结构，避免沿用旧项目命名和状态文件协议。
 
 ### 任务
 
@@ -50,30 +50,30 @@ SignalLight/
   installer/
 ```
 
-- 统一 UTF-8 编码。
+- 统一 UTF-8 文档编码。
 - 确定通用事件协议。
-- 确定默认本地目录：
+- 确定默认本地数据目录：
 
 ```text
 %LOCALAPPDATA%\SignalLight\
 ```
 
-- 建立基本 CI / 本地测试命令。
+- 建立基础 CI 和本地测试命令。
 
 ### 交付物
 
 - 可打开的 solution。
 - Core 项目基础模型。
 - Agent 项目命令行入口。
-- App 项目空窗口。
+- App 项目基础窗口。
 - docs 中的协议文档。
 
 ### 验收标准
 
 - `dotnet build` 通过。
 - `dotnet test` 通过。
-- 项目名、命名空间、文件名不绑定 Codex。
-- 无乱码中文。
+- 项目名、命名空间和文件名不绑定 Codex。
+- 中文文档为 UTF-8 且无乱码。
 
 ## 4. Phase 1：Codex MVP
 
@@ -82,7 +82,7 @@ SignalLight/
 完成第一条端到端链路：
 
 ```text
-Codex hooks -> SignalLight.Agent -> JSON state -> WPF traffic light UI
+Codex hooks -> codex-hook.ps1 -> JSON state -> WPF traffic light UI
 ```
 
 ### 任务
@@ -93,7 +93,7 @@ Codex hooks -> SignalLight.Agent -> JSON state -> WPF traffic light UI
 - 实现 JSON 主存储：
 
 ```text
-state.json
+snapshot.json
 sessions\<session-id>.json
 events\*.json
 diagnostics\latest-hook-context.json
@@ -105,34 +105,37 @@ diagnostics\latest-hook-context.json
 TaskStarted -> Thinking -> 红灯
 UserActionRequired -> Waiting -> 黄灯
 TaskCompleted -> Completed / Idle -> 绿灯
-TaskFailed -> Failed -> 灰灯或异常提示
+TaskFailed -> Failed -> 异常状态
 ```
 
-- 实现 WPF 交通红绿灯主窗口。
+- 实现 WPF 交通灯主窗口。
+- 提供自动化 Phase 1 验证脚本，模拟 Codex hook 输入并验证状态文件。
 
 ### 交付物
 
-- 可运行的 `SignalLight.App.exe`。
-- 可运行的 `SignalLight.Agent.exe`。
+- 可通过 `dotnet` 运行的 `SignalLight.App.dll`。
+- 可通过 `dotnet` 运行的 `SignalLight.Agent.dll`。
 - Codex hook 模板。
 - 安装 hooks 脚本。
 - 红黄绿交通灯 UI。
+- Phase 1 自动验证脚本。
 
 ### 验收标准
 
 - 用户提交 Codex 请求后亮红灯。
 - Codex 请求权限时亮黄灯。
 - Codex 完成后亮绿灯。
-- App 未启动时，Agent 仍能写入事件文件。
+- App 未启动时，Agent 仍能写入事件、会话和快照文件。
 - App 启动后能读取最新状态。
 - 不需要 SQLite。
 - 不需要后台服务。
+- 自动验证脚本能通过模拟 hook 链路证明代码路径可用。
 
 ## 5. Phase 2：多会话和诊断
 
 ### 目标
 
-让产品达到日常可用状态，解决多会话、信任、路径和诊断问题。
+让产品达到日常可用状态，解决多会话、信任、路径和诊断问题，同时保持主窗口足够小。
 
 ### 任务
 
@@ -143,29 +146,30 @@ TaskFailed -> Failed -> 灰灯或异常提示
 Waiting > Failed > Thinking > Completed > Idle > Stale > Unknown
 ```
 
-- 实现交通灯侧边任务抽屉。
-- 实现 hook 信任引导。
-- 实现诊断页：
+- 实现右下角任务计数徽标。
+- 实现点击徽标展开的任务抽屉。
+- 任务抽屉显示：
 
 ```text
-应用版本
-数据目录
-Codex hooks 路径
-最近 hook 触发时间
-最近事件
-最近错误
-复制诊断信息
-打开数据目录
-重新安装 hooks
+任务 prompt 节选
+状态徽标
+工作目录摘要
+运行中耗时或完成耗时
+单行删除入口
 ```
 
+- 实现 hook 信任引导。
+- 将诊断信息放入托盘菜单和诊断导出，而不是常驻主窗口。
 - 实现托盘菜单。
 - 实现旧 session 自动过期。
+- 实现已完成 session 清理。
 
 ### 交付物
 
-- 多会话任务抽屉。
-- 诊断页。
+- 小型悬浮交通灯窗口。
+- 任务计数徽标和任务抽屉。
+- 单任务删除能力。
+- 诊断导出能力。
 - 托盘菜单。
 - hooks 重装入口。
 - session 清理策略。
@@ -173,9 +177,11 @@ Codex hooks 路径
 ### 验收标准
 
 - 多个 Codex 会话同时运行时，主灯按优先级聚合。
-- 点击交通灯可展开任务抽屉。
-- 未信任 hooks 时，诊断页能明确提示。
-- 最近事件可在诊断页看到。
+- 任务抽屉能解释主灯为什么是当前状态。
+- 任务行顶部显示任务 prompt 节选，完成后仍保留该节选。
+- 任务行不显示 `source/adapter` 这类适配器内部细节。
+- 用户可以从抽屉删除某个当前任务行。
+- 未信任 hooks 或 hook 异常时，可通过诊断导出定位问题。
 - 已完成会话能自动隐藏或手动清理。
 
 ## 6. Phase 3：通用适配器
@@ -186,7 +192,7 @@ Codex hooks 路径
 
 ### 任务
 
-- 定义通用事件 CLI：
+- 强化通用 `emit` 命令：
 
 ```text
 signal-agent emit --source cli --state running --title "AutoAgent"
@@ -195,7 +201,7 @@ signal-agent emit --source generic --state completed --title "Done"
 ```
 
 - 实现通用 JSON drop-in 事件目录。
-- 实现 source / adapter 字段。
+- 实现 source / adapter 字段展示。
 - 支持非 Codex session id。
 - 增加 adapter registry：
 
@@ -207,7 +213,7 @@ file-drop
 
 ### 交付物
 
-- 通用 `emit` 命令。
+- 通用 `emit` 合同。
 - 通用事件协议文档。
 - 非 Codex 示例脚本。
 - adapter registry。
@@ -238,7 +244,7 @@ finished -> TaskCompleted
 error -> TaskFailed
 ```
 
-- 支持 tab id / URL / title 作为 session 上下文。
+- 支持 tab id、URL、title 作为 session 上下文。
 - 通过本地 companion bridge 或文件上报给 Agent。
 
 ### 交付物
@@ -267,8 +273,8 @@ error -> TaskFailed
 
 ```text
 SignalLight-Portable.zip
-  SignalLight.App.exe
-  SignalLight.Agent.exe
+  app\SignalLight.App.dll
+  agent\SignalLight.Agent.dll
   install-hooks.ps1
   uninstall-hooks.ps1
   hooks\codex-hook.ps1
@@ -336,55 +342,54 @@ Codex 接入
 
 - 启动 smoke test。
 - 状态文件变化后 UI 刷新。
-- 多会话抽屉显示。
-- 诊断页打开。
+- 任务徽标和抽屉显示。
+- 抽屉任务行删除。
+- 托盘诊断导出。
 - 托盘退出。
 
 ## 10. 阶段优先级建议
 
-建议先做：
+优先顺序：
 
 ```text
 Phase 0 -> Phase 1 -> Phase 2
 ```
 
-这三个阶段完成后，产品已经能作为 Codex 的低依赖通用红绿灯使用。
+这三个阶段完成后，产品已经能作为 Codex 的低依赖本地交通灯使用。
 
-然后做：
+随后推进：
 
 ```text
 Phase 3
 ```
 
-这一步是产品从 Codex 工具变成通用 AI / Agent 信号灯的关键。
+这一阶段是产品从 Codex 工具变成通用 AI / Agent 信号灯的关键。
 
-最后做：
+最后推进：
 
 ```text
 Phase 4 -> Phase 5
 ```
 
-浏览器适配和发布质量可以并行推进，但不要早于 Core 协议稳定之前大规模开发。
+浏览器适配和发布质量可以并行推进，但不应早于 Core 协议稳定之前大规模开发。
 
-## 11. 关键风险和控制
+## 11. 关键风险和控制方式
 
 | 风险 | 影响 | 控制方式 |
 |---|---|---|
 | Codex hooks 输入变化 | Codex 适配失效 | 保留 raw payload，适配器单独维护 |
-| 浏览器网站 DOM 变化 | 网页适配不稳定 | 每个网站独立 adapter，先 userscript 验证 |
-| 过度依赖后台服务 | 部署变复杂 | MVP 不做后台服务 |
+| 浏览器网站 DOM 变化 | 网页适配不稳定 | 每个站点独立 adapter，先 userscript 验证 |
+| 过度依赖后台服务 | 部署复杂 | MVP 不做后台服务 |
 | SQLite 过早引入 | 增加依赖和迁移成本 | MVP 使用 JSON |
 | 产品名绑定 Codex | 后续扩展受限 | 使用 SignalLight / AI Traffic Signal |
 | UI 变成非交通灯 | 偏离产品约束 | 主 UI 严格保留红黄绿交通灯 |
 
 ## 12. 当前推荐下一步
 
-立即开始 Phase 0：
+当前已完成 Phase 2 紧凑可用里程碑。下一步建议：
 
-1. 创建 `SignalLight` 新解决方案。
-2. 定义通用事件模型。
-3. 实现 JSON 存储接口。
-4. 实现空白交通灯 WPF UI。
-5. 实现 `SignalLight.Agent emit` 最小命令。
+1. 完成真实 Codex `/hooks` 信任和红黄绿状态手工验收。
+2. 将验收结果写入 `docs/00-progress`。
+3. 若通过，再启动 Phase 3 通用 adapter 开发。
+4. 若失败，优先根据 `diagnostics/latest-hook-context.json` 和诊断导出包修复 hook 路径、payload 或信任问题。
 
-Phase 0 完成后再进入 Codex hooks MVP，不建议直接从 UI 或安装器开始。

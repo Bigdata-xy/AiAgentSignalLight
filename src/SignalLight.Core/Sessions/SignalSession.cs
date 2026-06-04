@@ -11,5 +11,6 @@ public sealed record SignalSession
     public string Workspace { get; init; } = string.Empty;
     public SignalSessionState State { get; init; } = SignalSessionState.Unknown;
     public SignalEventType LastEventType { get; init; } = SignalEventType.Unknown;
+    public DateTimeOffset StartedAt { get; init; } = DateTimeOffset.MinValue;
     public DateTimeOffset UpdatedAt { get; init; } = DateTimeOffset.Now;
 }

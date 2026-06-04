@@ -1,5 +1,9 @@
 $ErrorActionPreference = "Stop"
-$repoRoot = Split-Path -Parent $PSScriptRoot
+$repoRoot = if (Test-Path -LiteralPath (Join-Path $PSScriptRoot "hooks\codex-hook.ps1")) {
+    $PSScriptRoot
+} else {
+    Split-Path -Parent $PSScriptRoot
+}
 $hookScript = Join-Path $repoRoot "hooks\codex-hook.ps1"
 $codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $env:USERPROFILE ".codex" }
 $hooksJson = Join-Path $codexHome "hooks.json"
@@ -29,7 +33,7 @@ function New-HookCommand {
         [string]$EventName
     )
 
-    $escapedHookScript = $hookScript.Replace('"', '\"')
+    $escapedHookScript = ([string]$hookScript).Replace('"', '\"')
     return "powershell -NoProfile -ExecutionPolicy Bypass -File `"$escapedHookScript`" -EventName `"$EventName`""
 }
 
@@ -67,6 +71,19 @@ function Remove-OwnedHookEntries {
     return @($keptGroups)
 }
 
+function Write-JsonNoBom {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$Path,
+        [Parameter(Mandatory=$true)]
+        [object]$Value
+    )
+
+    $json = $Value | ConvertTo-Json -Depth 20
+    $encoding = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText($Path, $json, $encoding)
+}
+
 if (Test-Path -LiteralPath $hooksJson) {
     $raw = Get-Content -LiteralPath $hooksJson -Raw
     if ([string]::IsNullOrWhiteSpace($raw)) {
@@ -87,7 +104,7 @@ if (Test-Path -LiteralPath $hooksJson) {
 
 Ensure-Property -Target $config -Name "hooks" -Value ([pscustomobject]@{})
 
-$events = @("UserPromptSubmit", "PermissionRequest", "Stop", "SessionStart")
+$events = @("UserPromptSubmit", "PreToolUse", "PostToolUse", "PermissionRequest", "Stop", "SessionStart")
 foreach ($event in $events) {
     Ensure-Property -Target $config.hooks -Name $event -Value @()
     $existingGroups = @($config.hooks.$event)
@@ -108,7 +125,7 @@ if (Test-Path -LiteralPath $hooksJson) {
     Copy-Item -LiteralPath $hooksJson -Destination "$hooksJson.bak" -Force
 }
 
-Set-Content -LiteralPath $hooksJson -Value ($config | ConvertTo-Json -Depth 20) -Encoding UTF8
+Write-JsonNoBom -Path $hooksJson -Value $config
 
 Write-Host "SignalLight hooks installed into $hooksJson"
 Write-Host "Run /hooks in Codex and trust the SignalLight hook commands if prompted."

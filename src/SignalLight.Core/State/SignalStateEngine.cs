@@ -20,20 +20,32 @@ public sealed class SignalStateEngine
 
         return new SignalSession
         {
-            SessionId = NormalizeSessionId(signalEvent),
+            SessionId = NormalizeSessionId(signalEvent, previous),
             DisplayName = BuildDisplayName(signalEvent, previous),
             Source = signalEvent.Source,
             Adapter = signalEvent.Adapter,
-            Workspace = signalEvent.Workspace,
+            Workspace = BuildWorkspace(signalEvent, previous),
             State = state,
             LastEventType = signalEvent.EventType,
+            StartedAt = GetStartedAt(signalEvent, previous),
             UpdatedAt = signalEvent.CreatedAt
         };
     }
 
-    public SignalSnapshot BuildSnapshot(IEnumerable<SignalSession> sessions, DateTimeOffset? now = null)
+    public SignalSnapshot BuildSnapshot(
+        IEnumerable<SignalSession> sessions,
+        DateTimeOffset? now = null,
+        TimeSpan? staleAfter = null,
+        TimeSpan? completedRetention = null)
     {
-        var visible = sessions.ToList();
+        var referenceTime = now ?? DateTimeOffset.Now;
+        var staleThreshold = staleAfter ?? TimeSpan.FromMinutes(30);
+        var completedThreshold = completedRetention ?? TimeSpan.FromHours(8);
+        var visible = sessions
+            .Select(session => ApplyExpiry(session, referenceTime, staleThreshold))
+            .Where(session => ShouldKeep(session, referenceTime, completedThreshold))
+            .ToList();
+
         return new SignalSnapshot
         {
             AggregateState = Aggregate(visible),
@@ -41,7 +53,7 @@ public sealed class SignalStateEngine
                 .OrderBy(GetPriority)
                 .ThenByDescending(session => session.UpdatedAt)
                 .ToArray(),
-            UpdatedAt = now ?? DateTimeOffset.Now
+            UpdatedAt = referenceTime
         };
     }
 
@@ -90,20 +102,49 @@ public sealed class SignalStateEngine
         };
     }
 
-    private static string NormalizeSessionId(SignalEvent signalEvent)
+    private static SignalSession ApplyExpiry(SignalSession session, DateTimeOffset now, TimeSpan staleAfter)
     {
+        if (session.State is not (SignalSessionState.Thinking or SignalSessionState.Waiting))
+        {
+            return session;
+        }
+
+        return now - session.UpdatedAt > staleAfter
+            ? session with { State = SignalSessionState.Stale }
+            : session;
+    }
+
+    private static bool ShouldKeep(SignalSession session, DateTimeOffset now, TimeSpan completedRetention)
+    {
+        if (session.State is SignalSessionState.Completed or SignalSessionState.Idle)
+        {
+            return now - session.UpdatedAt <= completedRetention;
+        }
+
+        return true;
+    }
+
+    private static string NormalizeSessionId(SignalEvent signalEvent, SignalSession? previous)
+    {
+        if (!string.IsNullOrWhiteSpace(previous?.SessionId))
+        {
+            return previous.SessionId;
+        }
+
         if (!string.IsNullOrWhiteSpace(signalEvent.SessionId))
         {
             return Sanitize(signalEvent.SessionId);
         }
 
-        var fallback = $"{signalEvent.Source}-{signalEvent.Adapter}-{signalEvent.Workspace}-{signalEvent.Title}";
+        var fallback = !string.IsNullOrWhiteSpace(signalEvent.Title)
+            ? $"{signalEvent.Source}-{signalEvent.Adapter}-{signalEvent.Workspace}-{signalEvent.Title}"
+            : $"{signalEvent.Source}-{signalEvent.Adapter}-{signalEvent.Workspace}";
         return Sanitize(fallback);
     }
 
     private static string BuildDisplayName(SignalEvent signalEvent, SignalSession? previous)
     {
-        if (!string.IsNullOrWhiteSpace(signalEvent.Title))
+        if (!string.IsNullOrWhiteSpace(signalEvent.Title) && !IsPlaceholderTitle(signalEvent.Title))
         {
             return signalEvent.Title.Length <= 48 ? signalEvent.Title : signalEvent.Title[..48];
         }
@@ -113,7 +154,43 @@ public sealed class SignalStateEngine
             return previous.DisplayName;
         }
 
-        return string.IsNullOrWhiteSpace(signalEvent.Source) ? "AI Task" : signalEvent.Source;
+        return "AI Task";
+    }
+
+    private static string BuildWorkspace(SignalEvent signalEvent, SignalSession? previous)
+    {
+        if (previous is not null
+            && string.IsNullOrWhiteSpace(signalEvent.Title)
+            && !string.IsNullOrWhiteSpace(previous.Workspace))
+        {
+            return previous.Workspace;
+        }
+
+        return signalEvent.Workspace;
+    }
+
+    private static DateTimeOffset GetStartedAt(SignalEvent signalEvent, SignalSession? previous)
+    {
+        if (previous?.StartedAt > DateTimeOffset.MinValue)
+        {
+            return previous.StartedAt;
+        }
+
+        if (previous?.UpdatedAt > DateTimeOffset.MinValue)
+        {
+            return previous.UpdatedAt;
+        }
+
+        return signalEvent.CreatedAt;
+    }
+
+    private static bool IsPlaceholderTitle(string title)
+    {
+        var normalized = title.Trim();
+        return string.Equals(normalized, "Codex", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalized, "True", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalized, "False", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalized, "AI Task", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string Sanitize(string value)
