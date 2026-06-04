@@ -1,6 +1,6 @@
 # Current Completion Record
 
-Date: 2026-06-03
+Date: 2026-06-04
 
 ## Overall Status
 
@@ -91,7 +91,7 @@ Results:
 
 ## Known Risks
 
-- The repository is not currently a Git working tree, so progress cannot be verified through commit history.
+- The repository is now a local Git working tree, but no remote repository has been configured yet.
 - Some long Chinese planning and analysis documents are mojibake. They should be restored or rewritten in UTF-8 before being used as source-of-truth documentation.
 - Current tests are too small to protect the intended product behavior.
 - Real Codex hook behavior still needs manual validation because tests run the hook script directly with simulated stdin.

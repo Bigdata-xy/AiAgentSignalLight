@@ -6,6 +6,7 @@ This directory is organized by document purpose.
 
 - `current-completion-record.md`: Current implementation status, verification results, completed work, gaps, and recommended next steps.
 - `manual-phase1-validation-checklist.md`: Manual checklist for validating the real Codex hook to WPF refresh loop.
+- `2026-06-04-completed-work-log.md`: Chinese persisted summary of completed project work as of 2026-06-04.
 
 ## 01-planning
 
