@@ -12,7 +12,7 @@ public sealed class HookInstallScriptTests
     {
         var repoRoot = FindRepoRoot();
         var signalRoot = Path.Combine(Path.GetTempPath(), "SignalLightHookTests", Guid.NewGuid().ToString("N"));
-        var agentDll = Path.Combine(repoRoot, "src", "SignalLight.Agent", "bin", "Debug", "net8.0", "SignalLight.Agent.dll");
+        var agentDll = FindAgentDll(repoRoot);
         var prompt = string.Concat('\u4fee', '\u590d', '\u4e2d', '\u6587', '\u4efb', '\u52a1', '\u6807', '\u9898');
         var payload = $$"""
         {
@@ -153,7 +153,7 @@ public sealed class HookInstallScriptTests
     {
         var repoRoot = FindRepoRoot();
         var signalRoot = Path.Combine(Path.GetTempPath(), "SignalLightHookTests", Guid.NewGuid().ToString("N"));
-        var agentDll = Path.Combine(repoRoot, "src", "SignalLight.Agent", "bin", "Debug", "net8.0", "SignalLight.Agent.dll");
+        var agentDll = FindAgentDll(repoRoot);
 
         RunAgentEmit(agentDll, signalRoot, "running", "B:\\same-workspace", "Terminal task one");
         RunAgentEmit(agentDll, signalRoot, "running", "B:\\same-workspace", "Terminal task two");
@@ -186,7 +186,7 @@ public sealed class HookInstallScriptTests
     {
         var repoRoot = FindRepoRoot();
         var signalRoot = Path.Combine(Path.GetTempPath(), "SignalLightHookTests", Guid.NewGuid().ToString("N"));
-        var agentDll = Path.Combine(repoRoot, "src", "SignalLight.Agent", "bin", "Debug", "net8.0", "SignalLight.Agent.dll");
+        var agentDll = FindAgentDll(repoRoot);
 
         RunAgentEmit(agentDll, signalRoot, "running", "B:\\same-workspace", "Manual task");
         RunAgentEmit(agentDll, signalRoot, state, "B:\\same-workspace", "Manual task");
@@ -202,7 +202,7 @@ public sealed class HookInstallScriptTests
     {
         var repoRoot = FindRepoRoot();
         var signalRoot = Path.Combine(Path.GetTempPath(), "SignalLightHookTests", Guid.NewGuid().ToString("N"));
-        var agentDll = Path.Combine(repoRoot, "src", "SignalLight.Agent", "bin", "Debug", "net8.0", "SignalLight.Agent.dll");
+        var agentDll = FindAgentDll(repoRoot);
         const string workspace = "B:\\AI Traffic Signal";
 
         RunAgentHook(agentDll, signalRoot, "UserPromptSubmit", $$"""
@@ -236,7 +236,7 @@ public sealed class HookInstallScriptTests
     {
         var repoRoot = FindRepoRoot();
         var signalRoot = Path.Combine(Path.GetTempPath(), "SignalLightHookTests", Guid.NewGuid().ToString("N"));
-        var agentDll = Path.Combine(repoRoot, "src", "SignalLight.Agent", "bin", "Debug", "net8.0", "SignalLight.Agent.dll");
+        var agentDll = FindAgentDll(repoRoot);
         const string workspace = "B:\\AI Traffic Signal";
 
         RunAgentHook(agentDll, signalRoot, "UserPromptSubmit", $$"""
@@ -270,7 +270,7 @@ public sealed class HookInstallScriptTests
     {
         var repoRoot = FindRepoRoot();
         var signalRoot = Path.Combine(Path.GetTempPath(), "SignalLightHookTests", Guid.NewGuid().ToString("N"));
-        var agentDll = Path.Combine(repoRoot, "src", "SignalLight.Agent", "bin", "Debug", "net8.0", "SignalLight.Agent.dll");
+        var agentDll = FindAgentDll(repoRoot);
 
         RunAgentHook(agentDll, signalRoot, "UserPromptSubmit", """
         {
@@ -627,6 +627,34 @@ public sealed class HookInstallScriptTests
         var output = process.StandardOutput.ReadToEnd();
         var error = process.StandardError.ReadToEnd();
         Assert.True(process.ExitCode == 0, output + Environment.NewLine + error);
+    }
+
+    private static string FindAgentDll(string repoRoot)
+    {
+        var baseDirectory = new DirectoryInfo(AppContext.BaseDirectory);
+        var targetFramework = baseDirectory.Name;
+        var configuration = baseDirectory.Parent?.Name;
+
+        var candidates = new[]
+        {
+            configuration is null
+                ? null
+                : Path.Combine(repoRoot, "src", "SignalLight.Agent", "bin", configuration, targetFramework, "SignalLight.Agent.dll"),
+            Path.Combine(repoRoot, "src", "SignalLight.Agent", "bin", "Release", "net8.0", "SignalLight.Agent.dll"),
+            Path.Combine(repoRoot, "src", "SignalLight.Agent", "bin", "Debug", "net8.0", "SignalLight.Agent.dll")
+        };
+
+        foreach (var candidate in candidates)
+        {
+            if (!string.IsNullOrWhiteSpace(candidate) && File.Exists(candidate))
+            {
+                return candidate;
+            }
+        }
+
+        throw new FileNotFoundException(
+            "Could not find SignalLight.Agent.dll. Build SignalLight.Agent before running no-build tests.",
+            candidates.FirstOrDefault(path => !string.IsNullOrWhiteSpace(path)));
     }
 
     private static string FindRepoRoot()
