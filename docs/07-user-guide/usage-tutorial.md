@@ -1,65 +1,65 @@
-﻿# SignalLight 使用教程
+# SignalLight Usage Tutorial
 
-本文档说明如何使用 SignalLight 便携包接入 Codex，并用桌面红黄绿交通灯查看 AI / Agent 的运行状态。
+This document explains how to use the SignalLight portable package with Codex and view AI / Agent runtime state through the desktop red/yellow/green traffic light.
 
-## 1. 当前可用状态
+## 1. Current Usable State
 
-当前版本已经可以作为本地 MVP 使用。
+The current version can already be used as a local MVP.
 
-已验证：
+Verified:
 
-- 项目可以构建。
-- 自动化测试通过。
-- Phase 1 模拟 Codex hook 链路通过。
-- 便携包可以生成。
+- The project builds.
+- Automated tests pass.
+- The Phase 1 simulated Codex hook chain passes.
+- The portable package can be generated.
 
-仍需用户在真实环境手工完成：
+Still requires the user to complete manually in the real environment:
 
-- 在 Codex 中执行 `/hooks`。
-- 信任 SignalLight hook 命令。
-- 用真实 Codex 任务观察红、黄、绿状态变化。
+- Run `/hooks` in Codex.
+- Trust the SignalLight hook commands.
+- Observe red, yellow, and green state changes with real Codex tasks.
 
-## 2. 状态含义
+## 2. State Meanings
 
-| 灯色 | 内部状态 | 含义 |
+| Lamp | Internal state | Meaning |
 |---|---|---|
-| 红灯 | `Thinking` | Codex / AI / Agent 正在处理任务 |
-| 黄灯 | `Waiting` | 正在等待用户输入、权限确认或人工操作 |
-| 绿灯 | `Completed` / `Idle` | 任务完成或当前空闲 |
-| 异常/过期 | `Failed` / `Stale` / `Unknown` | 任务失败、状态过久未更新或无法判断 |
+| Red | `Thinking` | Codex / AI / Agent is processing a task |
+| Yellow | `Waiting` | Waiting for user input, permission confirmation, or manual action |
+| Green | `Completed` / `Idle` | Task completed or currently idle |
+| Exception/stale | `Failed` / `Stale` / `Unknown` | Task failed, state has not updated for too long, or state cannot be determined |
 
-当前完成判定比较严格：只有 Codex `Stop` hook，或 Codex 明确取消授权/中断当前 turn，才会让任务进入绿灯。手动或测试命令写入 `completed`、`done`、`idle`、`green` 不会把真实任务标记完成。
+Current completion decisions are strict: only the Codex `Stop` hook, or an explicit Codex authorization cancellation / current-turn interruption, can make a task enter green. Manual or test commands that write `completed`, `done`, `idle`, or `green` do not mark a real task complete.
 
-黄灯没有固定时长。Codex 请求授权后，如果用户还没有确认，SignalLight 会一直保持黄灯。用户授权通过后，只有收到 Codex 后续 `PreToolUse`、`PostToolUse` 或明确 approval 记录，才会切回红灯。
+Yellow has no fixed duration. After Codex requests authorization, SignalLight stays yellow until the user confirms. After authorization is approved, SignalLight switches back to red only after receiving a later Codex `PreToolUse`, `PostToolUse`, or explicit approval record.
 
-完整状态策略：
+Full state policy:
 
 ```text
 docs/04-protocol/state-completion-policy.md
 ```
 
-## 3. 推荐使用方式：便携包
+## 3. Recommended Usage: Portable Package
 
-便携包位置：
+Portable package location:
 
 ```text
 B:\AI Traffic Signal\dist\SignalLight-Portable-win-x64.zip
 ```
 
-推荐直接使用项目根目录的一键启动脚本：
+Recommended startup from the project root:
 
 ```powershell
 cd "B:\AI Traffic Signal"
 .\start-signal-light.ps1
 ```
 
-这个脚本会自动解压最新便携包、安装 hooks，并启动 SignalLight。
+This script automatically extracts the latest portable package, installs hooks, and starts SignalLight.
 
-启动脚本会把 SignalLight 放到独立后台进程中运行。脚本返回后可以关闭 PowerShell 窗口，红绿灯会继续保留；需要退出时使用系统托盘中的 `Exit`。
+The startup script runs SignalLight as an independent background process. After the script returns, the PowerShell window can be closed and the traffic light will keep running. Use `Exit` in the system tray to quit.
 
-### 3.1 解压便携包
+### 3.1 Extract The Portable Package
 
-如果需要手工解压，打开 PowerShell，执行：
+If manual extraction is needed, open PowerShell and run:
 
 ```powershell
 cd "B:\AI Traffic Signal"
@@ -67,7 +67,7 @@ Expand-Archive -LiteralPath ".\dist\SignalLight-Portable-win-x64.zip" -Destinati
 cd ".\dist\SignalLight-Portable-win-x64-run"
 ```
 
-解压后目录中应包含：
+After extraction, the directory should contain:
 
 ```text
 app\SignalLight.App.dll
@@ -79,27 +79,27 @@ README.md
 LICENSE
 ```
 
-## 4. 安装 Codex hooks
+## 4. Install Codex Hooks
 
-在便携包目录中执行：
+Run this in the portable package directory:
 
 ```powershell
 .\install-hooks.ps1
 ```
 
-这个脚本会把 SignalLight 的 hook 命令写入 Codex hooks 配置：
+This script writes SignalLight hook commands into the Codex hooks configuration:
 
 ```text
 %USERPROFILE%\.codex\hooks.json
 ```
 
-如果你设置了 `CODEX_HOME`，则写入：
+If `CODEX_HOME` is set, it writes to:
 
 ```text
 %CODEX_HOME%\hooks.json
 ```
 
-脚本会注册这些 Codex 事件：
+The script registers these Codex events:
 
 ```text
 UserPromptSubmit
@@ -110,145 +110,145 @@ Stop
 SessionStart
 ```
 
-这些事件触发时，Codex 会直接调用：
+When these events trigger, Codex directly calls:
 
 ```text
 powershell -NoProfile -ExecutionPolicy Bypass -File hooks\codex-hook.ps1 -EventName <event>
 ```
 
-当前主链路由 `hooks\codex-hook.ps1` 直接读取 Codex stdin 并写入本地 JSON。这样可以避开本机 Windows Smart App Control / 应用控制策略对便携包中 `SignalLight.Agent.dll` 的拦截。
+The current main chain lets `hooks\codex-hook.ps1` read Codex stdin directly and write local JSON. This avoids Windows Smart App Control / application control policy blocking `SignalLight.Agent.dll` inside the portable package.
 
-hook 最终把状态写入：
+The hook ultimately writes state to:
 
 ```text
 %LOCALAPPDATA%\SignalLight\
 ```
 
-## 5. 启动 SignalLight
+## 5. Start SignalLight
 
-在便携包目录中执行：
+Run this in the portable package directory:
 
 ```powershell
 dotnet .\app\SignalLight.App.dll
 ```
 
-当前推荐使用 DLL 方式，因为它可以避开 Windows Smart App Control 对本地未签名 exe 的拦截。
+DLL startup is currently recommended because it can avoid Windows Smart App Control blocking local unsigned exe files.
 
-启动后会出现一个小型桌面交通灯窗口。窗口可以拖动，也会显示托盘图标。通过 `start-signal-light.ps1` 启动时，App 不依赖当前 PowerShell 窗口，关闭终端不会关闭红绿灯。
+After startup, a small desktop traffic-light window appears. The window can be dragged and also shows a tray icon. When started through `start-signal-light.ps1`, the App does not depend on the current PowerShell window; closing the terminal does not close the traffic light.
 
-主窗口默认只显示红、黄、绿三盏灯和任务计数徽标。其他操作隐藏在托盘菜单和任务抽屉中，避免窗口占用太多屏幕空间。
+The main window shows only the red, yellow, and green lamps plus the task-count badge by default. Other operations are hidden in the tray menu and task drawer so the window does not occupy too much screen space.
 
-托盘菜单的第一层只保留常用入口：
+The first level of the tray menu keeps only common entry points:
 
 - Show / Hide
 - Hooks
 - Diagnostics
 - Exit
 
-其中 `Hooks` 子菜单包含 `Install` 和 `Uninstall`，用于接入或移除 Codex hooks。
+The `Hooks` submenu contains `Install` and `Uninstall` for connecting or removing Codex hooks.
 
-`Diagnostics` 子菜单包含 `Open data`、`Export` 和 `Clear done`，用于查看本地数据、导出排查包和清理已完成会话。
+The `Diagnostics` submenu contains `Open data`, `Export`, and `Clear done` for viewing local data, exporting troubleshooting packages, and clearing completed sessions.
 
-## 6. 在 Codex 中信任 hooks
+## 6. Trust Hooks In Codex
 
-打开 Codex，在任意会话中输入：
+Open Codex and enter this in any session:
 
 ```text
 /hooks
 ```
 
-看到 SignalLight 相关 hook 命令后，选择信任。
+After SignalLight hook commands appear, choose to trust them.
 
-这是必须步骤。没有信任前，Codex 不会执行 hook，SignalLight 也不会收到真实 Codex 事件。
+This step is required. Before trust is granted, Codex will not execute the hooks and SignalLight will not receive real Codex events.
 
-## 7. 正常使用 Codex
+## 7. Normal Codex Usage
 
-完成 hook 安装和信任后，正常使用 Codex 即可。
+After hooks are installed and trusted, use Codex normally.
 
-典型状态变化：
-
-```text
-提交 prompt -> 红灯
-Codex 请求权限 -> 黄灯
-授权通过并收到继续执行信号 -> 红灯
-任务完成 -> 绿灯
-```
-
-如果在授权界面选择 `No`，Codex 会中断当前 turn。SignalLight 只识别 Codex 明确取消/中断信号，并把该任务转为空闲/完成显示；不会因为普通文本里出现“denied/canceled”等词就误判完成。
-
-收到 `Stop` 后，UI 会先等待 0.8 秒确认窗口。如果这段时间内又来了新的红灯或黄灯事件，绿灯不会显示，避免执行过程中短暂闪绿。
-
-SignalLight 会用右下角徽标显示多会话完成数量，例如 `2/3` 表示 3 个可见会话中已有 2 个完成。
-
-点击右下角徽标可以打开任务抽屉。抽屉中每行任务会显示：
-
-- 任务 prompt 节选或工作目录名
-- 当前状态
-- 工作目录摘要
-- 运行中耗时或完成耗时
-
-抽屉不显示 `source/adapter`。任务完成后仍保留原始任务节选，不会变成 `Codex`。
-
-每行右侧的 `x` 可以删除该任务记录。删除后 SignalLight 会刷新任务列表、计数徽标和主灯状态。
-
-## 8. 验证是否接通
-
-### 8.1 在窗口中查看
-
-如果接通成功，SignalLight 主窗口的灯色会随 Codex 状态变化：
+Typical state changes:
 
 ```text
-提交 prompt -> 红灯闪烁
-请求权限 -> 黄灯闪烁
-授权通过并收到继续执行信号 -> 红灯闪烁
-任务完成 -> 绿灯闪烁
+Submit prompt -> red
+Codex requests permission -> yellow
+Authorization approved and continued-execution signal received -> red
+Task completed -> green
 ```
 
-如果需要查看详细 hook 诊断，请使用托盘菜单的 `Diagnostics > Open data` 或 `Diagnostics > Export`。
+If `No` is selected on the authorization screen, Codex interrupts the current turn. SignalLight only recognizes explicit Codex cancellation / interruption signals and moves that task to idle/completed display; it does not misclassify completion merely because words such as `denied` or `canceled` appear in ordinary text.
 
-如果需要查看当前任务细节，请点击窗口右下角的任务计数徽标打开抽屉。
+After receiving `Stop`, the UI first waits for a 0.8 second confirmation window. If a new red or yellow event arrives during that time, green is not displayed, avoiding a brief green flash during execution.
 
-### 8.2 在 PowerShell 中查看
+SignalLight uses the lower-right badge to show multi-session completion counts. For example, `2/3` means 2 of 3 visible sessions are completed.
 
-查看本地数据目录：
+Click the lower-right badge to open the task drawer. Each task row in the drawer shows:
+
+- Task prompt excerpt or workspace directory name
+- Current state
+- Workspace summary
+- Running duration or completed duration
+
+The drawer does not show `source/adapter`. After a task completes, it still keeps the original task excerpt and does not become `Codex`.
+
+The `x` on the right side of each row deletes that task record. After deletion, SignalLight refreshes the task list, count badge, and main lamp state.
+
+## 8. Verify Connectivity
+
+### 8.1 Check In The Window
+
+If the connection works, the main SignalLight lamp color changes with Codex state:
+
+```text
+Submit prompt -> red blinking
+Permission request -> yellow blinking
+Authorization approved and continued-execution signal received -> red blinking
+Task completed -> green blinking
+```
+
+For detailed hook diagnostics, use `Diagnostics > Open data` or `Diagnostics > Export` from the tray menu.
+
+To view current task details, click the task-count badge in the lower-right corner of the window to open the drawer.
+
+### 8.2 Check In PowerShell
+
+View the local data directory:
 
 ```powershell
 Get-ChildItem "$env:LOCALAPPDATA\SignalLight"
 ```
 
-查看事件文件：
+View event files:
 
 ```powershell
 Get-ChildItem "$env:LOCALAPPDATA\SignalLight\events"
 ```
 
-查看当前快照：
+View the current snapshot:
 
 ```powershell
 Get-Content "$env:LOCALAPPDATA\SignalLight\snapshot.json"
 ```
 
-查看最近 hook 诊断：
+View the latest hook diagnostics:
 
 ```powershell
 Get-Content "$env:LOCALAPPDATA\SignalLight\diagnostics\latest-hook-context.json"
 ```
 
-## 9. 导出诊断
+## 9. Export Diagnostics
 
-在 SignalLight 托盘菜单中点击：
+Click this in the SignalLight tray menu:
 
 ```text
 Diagnostics > Export
 ```
 
-诊断包会生成在：
+The diagnostics package is generated under:
 
 ```text
 %LOCALAPPDATA%\SignalLight\diagnostics\
 ```
 
-诊断包通常包含：
+The diagnostics package usually contains:
 
 - `snapshot.json`
 - `sessions/*.json`
@@ -256,38 +256,38 @@ Diagnostics > Export
 - `diagnostics/latest-hook-context.json`
 - Codex `hooks.json`
 
-## 10. 清理已完成会话
+## 10. Clear Completed Sessions
 
-在 SignalLight 托盘菜单中点击：
+Click this in the SignalLight tray menu:
 
 ```text
 Diagnostics > Clear done
 ```
 
-它会删除本地已经完成或空闲的 session 文件，并重建当前 snapshot。
+It deletes local session files that are already completed or idle and rebuilds the current snapshot.
 
-不会删除事件历史文件。
+It does not delete event history files.
 
-## 11. 卸载 SignalLight hooks
+## 11. Uninstall SignalLight Hooks
 
-如果不想继续让 Codex 接入 SignalLight，在便携包目录执行：
+If Codex should no longer connect to SignalLight, run this in the portable package directory:
 
 ```powershell
 .\uninstall-hooks.ps1
 ```
 
-它只会移除 SignalLight 自己写入的 hook 项，保留用户已有的其他 hooks。
+It removes only hook entries written by SignalLight and keeps any other user hooks.
 
-## 12. 日常使用命令
+## 12. Daily Commands
 
-首次使用推荐：
+Recommended first-time use:
 
 ```powershell
 cd "B:\AI Traffic Signal"
 .\start-signal-light.ps1
 ```
 
-首次使用手工方式：
+Manual first-time use:
 
 ```powershell
 cd "B:\AI Traffic Signal"
@@ -297,32 +297,32 @@ cd ".\dist\SignalLight-Portable-win-x64-run"
 dotnet .\app\SignalLight.App.dll
 ```
 
-然后在 Codex 中执行：
+Then run this in Codex:
 
 ```text
 /hooks
 ```
 
-信任 SignalLight hook 命令。
+Trust the SignalLight hook commands.
 
-以后日常启动通常只需要：
+For daily startup later, this is usually enough:
 
 ```powershell
 cd "B:\AI Traffic Signal"
 .\start-signal-light.ps1
 ```
 
-命令执行完成后可以关闭终端窗口。退出 SignalLight 请使用托盘菜单的 `Exit`。
+After the command finishes, the terminal window can be closed. Use the tray menu item `Exit` to exit SignalLight.
 
-只有 hooks 被修改、删除或需要重新接入时，才再次执行：
+Only rerun this when hooks are changed, deleted, or need to be reconnected:
 
 ```powershell
 .\install-hooks.ps1
 ```
 
-## 13. 开发目录运行方式
+## 13. Run From Development Directory
 
-如果不使用便携包，也可以直接从源码目录运行：
+If the portable package is not used, run directly from the source directory:
 
 ```powershell
 cd "B:\AI Traffic Signal"
@@ -330,142 +330,141 @@ cd "B:\AI Traffic Signal"
 dotnet run --project .\src\SignalLight.App\SignalLight.App.csproj
 ```
 
-然后在 Codex 中执行：
+Then run this in Codex:
 
 ```text
 /hooks
 ```
 
-## 14. 自动验证 Phase 1 链路
+## 14. Automated Phase 1 Chain Validation
 
-项目内置了模拟 Codex hook 的自动验证脚本：
+The project includes an automated validation script that simulates Codex hooks:
 
 ```powershell
 cd "B:\AI Traffic Signal"
 .\tools\validate-phase1.ps1
 ```
 
-它会验证：
+It verifies:
 
 - `UserPromptSubmit` -> `Thinking`
 - `PermissionRequest` -> `Waiting`
 - `PreToolUse` -> `Thinking`
 - `PostToolUse` -> `Thinking`
 - `Stop` -> `Completed`
-- 手动 `completed/done/idle/green` 不作为真实完成来源
+- Manual `completed/done/idle/green` is not treated as a real completion source
 - `snapshot.json`
 - `sessions/*.json`
 - `events/*.json`
 - `diagnostics/latest-hook-context.json`
 
-注意：这个脚本验证的是模拟 hook 链路，不等价于真实 Codex `/hooks` 信任流程。
+Note: this script validates the simulated hook chain. It is not equivalent to the real Codex `/hooks` trust flow.
 
-## 15. 常见问题
+## 15. FAQ
 
-### 15.1 窗口没有变化
+### 15.1 The Window Does Not Change
 
-检查：
+Check:
 
 ```powershell
 Get-Content "$env:LOCALAPPDATA\SignalLight\diagnostics\latest-hook-context.json"
 ```
 
-如果文件不存在，通常说明 Codex hook 没有触发。
+If the file does not exist, Codex hooks usually did not trigger.
 
-处理：
+Fix:
 
-1. 确认已经执行 `.\install-hooks.ps1`。
-2. 在 Codex 中执行 `/hooks`。
-3. 信任 SignalLight hook 命令。
-4. 再提交一个 Codex prompt。
+1. Confirm `.\install-hooks.ps1` has been executed.
+2. Run `/hooks` in Codex.
+3. Trust the SignalLight hook commands.
+4. Submit another Codex prompt.
 
-### 15.2 Codex 提示 hooks.json parse failed
+### 15.2 Codex Reports `hooks.json parse failed`
 
-如果 Codex 显示：
+If Codex shows:
 
 ```text
 failed to parse hooks config ... expected value at line 1 column 1
 ```
 
-通常是旧版 `hooks.json` 写入了 BOM 或文件内容损坏。使用当前版本重新安装 hooks：
+The usual cause is an old `hooks.json` written with BOM or damaged file content. Reinstall hooks with the current version:
 
 ```powershell
 cd "B:\AI Traffic Signal"
 .\start-signal-light.ps1
 ```
 
-当前安装脚本会用无 BOM UTF-8 写入 `hooks.json`。
+The current installation script writes `hooks.json` as UTF-8 without BOM.
 
-### 15.3 SignalLight.App.exe 被应用程序控制策略阻止
+### 15.3 `SignalLight.App.exe` Is Blocked By Application Control Policy
 
-如果 PowerShell 显示：
+If PowerShell shows:
 
 ```text
-应用程序控制策略已阻止此文件
+The application control policy has blocked this file.
 ```
 
-当前版本已经改为 DLL 启动方案。先使用最新版启动脚本：
+The current version has switched to the DLL startup strategy. Use the latest startup script first:
 
 ```powershell
 cd "B:\AI Traffic Signal"
 .\start-signal-light.ps1
 ```
 
-如果仍被阻止，通常说明系统连 `dotnet` 加载本地 DLL 也限制了。此时需要把 `B:\AI Traffic Signal` 或便携包目录加入系统允许列表。
+If it is still blocked, the system may also restrict local DLL loading through `dotnet`. In that case, add `B:\AI Traffic Signal` or the portable package directory to the system allow list.
 
-### 15.4 Hooks 显示未安装
+### 15.4 Hooks Show As Not Installed
 
-重新执行：
+Run again:
 
 ```powershell
 .\install-hooks.ps1
 ```
 
-然后在 Codex 中执行：
+Then run this in Codex:
 
 ```text
 /hooks
 ```
 
-### 15.5 Agent missing
+### 15.5 Agent Missing
 
-如果诊断里显示 Agent 找不到，确认便携包目录结构没有被改乱：
+If diagnostics show that Agent cannot be found, confirm the portable package directory structure has not been changed:
 
 ```text
 agent\SignalLight.Agent.dll
 hooks\codex-hook.ps1
 ```
 
-不要只复制 `app` 目录运行，hook 还需要 `agent` 和 `hooks` 目录。
+Do not copy only the `app` directory to run it. Hooks also need the `agent` and `hooks` directories.
 
-### 15.6 想完全停止接入 Codex
+### 15.6 Completely Stop Codex Integration
 
-执行：
+Run:
 
 ```powershell
 .\uninstall-hooks.ps1
 ```
 
-然后关闭 SignalLight 窗口或通过托盘菜单退出。
+Then close the SignalLight window or exit from the tray menu.
 
-### 15.7 授权后没有立刻从黄灯变红
+### 15.7 It Does Not Immediately Turn From Yellow To Red After Authorization
 
-这通常不是 UI 卡住，而是 Codex 没有在授权通过的瞬间写入 SignalLight 可以可靠识别的 approval 记录。
+This usually does not mean the UI is stuck. It means Codex did not write an approval record that SignalLight can reliably recognize at the instant authorization was approved.
 
-SignalLight 当前不会用进程命令行做兜底判断，因为这种方式可能误匹配 watcher 自身命令行，导致用户还没点 `Yes` 就提前变红。
+SignalLight currently does not use process command lines as fallback detection, because that can match the watcher process itself and turn red before the user clicks `Yes`.
 
-当前可靠规则是：
+Current reliable rule:
 
 ```text
-PermissionRequest -> 黄灯
-PreToolUse/PostToolUse/明确 approval -> 红灯
-Stop 或 Codex 明确取消/中断 -> 绿灯
+PermissionRequest -> yellow
+PreToolUse/PostToolUse/explicit approval -> red
+Stop or explicit Codex cancellation/interruption -> green
 ```
 
-如果需要排查真实事件顺序，查看：
+To troubleshoot the real event order, check:
 
 ```powershell
 Get-Content "$env:LOCALAPPDATA\SignalLight\diagnostics\latest-hook-context.json"
 Get-Content "$env:LOCALAPPDATA\SignalLight\diagnostics\latest-permission-watch.json"
 ```
-

@@ -4,6 +4,12 @@
 
 SignalLight 是一个本地 AI / Agent 状态信号灯，用 Codex hooks 等适配器采集任务事件，并通过桌面交通灯 UI 展示运行、等待、完成和诊断状态。
 
+## 演示视频
+
+<video controls src="assets/Video%20Project%205.mp4" title="SignalLight 演示视频"></video>
+
+[打开演示视频](assets/Video%20Project%205.mp4)
+
 ## 当前功能
 
 - 紧凑悬浮红、黄、绿交通灯 UI。

@@ -1,12 +1,12 @@
-# SignalLight 状态与完成判定策略
+# SignalLight State And Completion Policy
 
 Date: 2026-06-05
 
-本文是当前项目的状态判定权威口径。README、使用教程、架构文档和进度记录如果出现差异，以本文为准。
+This document is the authoritative state policy for the current project. If README files, user guides, architecture documents, or progress records differ from this document, this document takes precedence.
 
-## 1. 状态来源
+## 1. State Sources
 
-SignalLight 的显示状态来自本地事件文件：
+SignalLight display state comes from local event files:
 
 ```text
 %LOCALAPPDATA%\SignalLight\events
@@ -14,50 +14,50 @@ SignalLight 的显示状态来自本地事件文件：
 %LOCALAPPDATA%\SignalLight\snapshot.json
 ```
 
-Codex lifecycle hooks 通过 PowerShell 脚本写入这些文件：
+Codex lifecycle hooks write these files through the PowerShell script:
 
 ```text
 hooks\codex-hook.ps1
 ```
 
-当前不再让 Codex lifecycle hooks 直接加载 `SignalLight.Agent.dll`，因为本机 Windows Smart App Control / Code Integrity 可能拦截便携包中的未签名 DLL。
+Codex lifecycle hooks no longer load `SignalLight.Agent.dll` directly, because Windows Smart App Control / Code Integrity on this machine may block unsigned DLLs inside the portable package.
 
-## 2. 灯色含义
+## 2. Lamp Meanings
 
-| 灯色 | 聚合状态 | 含义 |
+| Lamp | Aggregate state | Meaning |
 |---|---|---|
-| 红灯 | `Thinking` | Codex / AI / Agent 正在执行任务 |
-| 黄灯 | `Waiting` | Codex 正在等待用户授权或人工操作 |
-| 绿灯 | `Completed` / `Idle` | 当前任务真正结束，或当前没有活跃任务 |
-| 异常 | `Failed` / `Stale` / `Unknown` | 任务失败、状态过期或无法判断 |
+| Red | `Thinking` | Codex / AI / Agent is running a task |
+| Yellow | `Waiting` | Codex is waiting for user authorization or manual action |
+| Green | `Completed` / `Idle` | The current task has truly ended, or there is no active task |
+| Exception | `Failed` / `Stale` / `Unknown` | The task failed, the state is stale, or the state cannot be determined |
 
-聚合优先级：
+Aggregate priority:
 
 ```text
 Waiting > Failed > Thinking > Completed > Idle > Stale > Unknown
 ```
 
-因此，只要存在一个等待授权的任务，主灯优先显示黄灯；只要存在仍在执行的任务，主灯不能因为其他完成事件提前变绿。
+Therefore, if any task is waiting for authorization, the main lamp displays yellow first. If any task is still running, other completion events must not make the main lamp turn green early.
 
-## 3. Codex hook 映射
+## 3. Codex Hook Mapping
 
-| Codex 事件 | SignalLight 事件 | 灯色 | 说明 |
+| Codex event | SignalLight event | Lamp | Description |
 |---|---|---|---|
-| `UserPromptSubmit` | `TaskStarted` | 红灯 | 用户提交 prompt，任务开始 |
-| `PermissionRequest` | `UserActionRequired` | 黄灯 | Codex 请求人工授权 |
-| `PreToolUse` | `TaskStarted` | 红灯 | 工具即将执行，任务继续运行 |
-| `PostToolUse` | `TaskStarted` | 红灯 | 工具执行后 Codex 仍在处理本轮任务 |
-| `Stop` | `TaskCompleted` | 绿灯 | Codex 当前 turn 结束 |
-| `SessionStart` | ignored | 不改变 | 只记录诊断，不写入任务状态 |
+| `UserPromptSubmit` | `TaskStarted` | Red | The user submitted a prompt and the task started |
+| `PermissionRequest` | `UserActionRequired` | Yellow | Codex requested manual authorization |
+| `PreToolUse` | `TaskStarted` | Red | A tool is about to run and the task continues |
+| `PostToolUse` | `TaskStarted` | Red | Codex is still processing the turn after tool execution |
+| `Stop` | `TaskCompleted` | Green | The current Codex turn ended |
+| `SessionStart` | ignored | No change | Recorded only for diagnostics; it does not write task state |
 
-## 4. 完成判定
+## 4. Completion Decision
 
-当前只有两类事件可以把任务判定为完成：
+Only two event classes can currently mark a task complete:
 
-1. Codex `Stop` hook。
-2. Codex 明确取消授权或中断当前 turn。
+1. Codex `Stop` hook.
+2. Codex explicitly cancels authorization or interrupts the current turn.
 
-取消授权/中断只识别 Codex 明确文本，例如：
+Authorization cancellation / interruption is recognized only from explicit Codex text, for example:
 
 ```text
 you canceled the request
@@ -69,7 +69,7 @@ turn aborted
 the user interrupted the previous turn on purpose
 ```
 
-这些文本只从结构化的结果字段中读取，例如：
+These strings are read only from structured result fields, such as:
 
 ```text
 tool_response
@@ -79,11 +79,11 @@ decision
 permission_resolution
 ```
 
-不会因为原始 prompt、命令文本或无关字段中出现类似词语就把任务标记完成。
+A task is not marked complete merely because similar words appear in the original prompt, command text, or unrelated fields.
 
-## 5. 手动 completed 不生效
+## 5. Manual `completed` Is Ignored
 
-为了避免测试脚本或其他工具误把未完成任务变绿，当前 Agent 会忽略这些完成类手动状态：
+To prevent test scripts or other tools from incorrectly turning an unfinished task green, the current Agent ignores these manual completion-like states:
 
 ```text
 completed
@@ -92,52 +92,52 @@ idle
 green
 ```
 
-也就是说，下面命令不会把任务变成绿灯：
+In other words, this command will not turn a task green:
 
 ```powershell
 dotnet SignalLight.Agent.dll emit --state completed
 ```
 
-手动 emit 仍可用于写入红灯、黄灯、失败和心跳类状态，但不能替代 Codex `Stop` 完成判定。
+Manual emit can still write red, yellow, failed, and heartbeat-like states, but it cannot replace Codex `Stop` as completion authority.
 
-## 6. 授权流程
+## 6. Authorization Flow
 
-正常期望：
+Expected normal flow:
 
 ```text
-提交 prompt -> 红灯
-Codex 请求授权 -> 黄灯
-授权通过并继续执行 -> 红灯
-Codex turn 结束 -> 绿灯
+Submit prompt -> red
+Codex requests authorization -> yellow
+Authorization is approved and execution continues -> red
+Codex turn ends -> green
 ```
 
-实际限制：
+Practical limits:
 
-- SignalLight 不能猜测用户是否点击了 `Yes`。
-- 如果 Codex 没有在授权通过后立刻写入可识别的 approval transcript 或后续 hook，SignalLight 会保持黄灯。
-- 一旦收到真实 `PreToolUse`、`PostToolUse` 或明确 approval 记录，才会切回红灯。
+- SignalLight cannot guess whether the user clicked `Yes`.
+- If Codex does not immediately write a recognizable approval transcript or follow-up hook after authorization is approved, SignalLight stays yellow.
+- SignalLight switches back to red only after receiving a real `PreToolUse`, `PostToolUse`, or explicit approval record.
 
-曾经尝试过通过进程命令行检测工具是否开始执行，但该方案会误匹配 watcher 自身命令行，导致用户未授权时也提前变红。因此当前已移除这类兜底检测。
+The project previously tried to detect whether a tool had started by inspecting process command lines. That approach could match the watcher process itself and turn red before the user had authorized the request, so that fallback detection has been removed.
 
-## 7. 黄灯无超时
+## 7. Yellow Has No Timeout
 
-黄灯没有固定时长限制。只要 Codex 仍处于等待用户授权状态，SignalLight 就应该保持黄灯。
+Yellow has no fixed duration limit. As long as Codex is still waiting for user authorization, SignalLight should remain yellow.
 
-如果用户选择 `No` 并导致 Codex 中断当前 turn，SignalLight 通过 Codex 取消/中断文本把任务转为完成/空闲。
+If the user selects `No` and Codex interrupts the current turn, SignalLight uses Codex cancellation / interruption text to move the task to completed / idle.
 
-## 8. 绿灯延迟确认
+## 8. Delayed Green Confirmation
 
-UI 收到 `Completed` 后不会立刻显示绿灯，而是等待 0.8 秒确认窗口。
+After the UI receives `Completed`, it does not display green immediately. It waits for a 0.8 second confirmation window.
 
-如果这 0.8 秒内没有新的红灯或黄灯事件，才显示绿灯。
+If no new red or yellow event arrives within those 0.8 seconds, green is displayed.
 
-如果马上来了新的 `Thinking` 或 `Waiting` 事件，则取消绿灯显示，继续保持真实执行状态。
+If a new `Thinking` or `Waiting` event arrives immediately, green display is canceled and the UI continues showing the real execution state.
 
-这个策略用于避免 Codex 中间阶段触发 `Stop` 时用户看到短暂绿灯闪烁。
+This policy avoids a brief green flash when Codex triggers `Stop` during an intermediate stage.
 
-## 9. 诊断文件
+## 9. Diagnostic Files
 
-排查状态转移时优先查看：
+When troubleshooting state transitions, check these first:
 
 ```powershell
 Get-Content "$env:LOCALAPPDATA\SignalLight\diagnostics\latest-hook-context.json"
@@ -145,23 +145,23 @@ Get-Content "$env:LOCALAPPDATA\SignalLight\diagnostics\latest-permission-watch.j
 Get-Content "$env:LOCALAPPDATA\SignalLight\snapshot.json"
 ```
 
-历史 hook 诊断：
+Historical hook diagnostics:
 
 ```text
 %LOCALAPPDATA%\SignalLight\diagnostics\hooks\
 %LOCALAPPDATA%\SignalLight\diagnostics\permission-watch\
 ```
 
-## 10. 当前验证状态
+## 10. Current Verification Status
 
-已验证：
+Verified:
 
-- `dotnet test SignalLight.sln` 通过。
-- `tools\validate-phase1.ps1` 通过。
-- `tools\package-portable.ps1` 通过。
-- 手动 `Agent emit --state completed/done/idle/green` 不会把快照切为完成。
+- `dotnet test SignalLight.sln` passes.
+- `tools\validate-phase1.ps1` passes.
+- `tools\package-portable.ps1` passes.
+- Manual `Agent emit --state completed/done/idle/green` does not switch the snapshot to completed.
 
-仍需真实 Codex 环境继续观察：
+Still needs continued observation in real Codex environments:
 
-- 不同 Codex 版本是否会在授权通过后立刻写入 approval transcript。
-- 多终端并发任务在缺少稳定 session id 时的归属准确性。
+- Whether different Codex versions write an approval transcript immediately after authorization is approved.
+- Ownership accuracy for concurrent tasks across multiple terminals when stable session IDs are missing.

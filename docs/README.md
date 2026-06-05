@@ -6,10 +6,10 @@ This directory is organized by document purpose.
 
 - `current-completion-record.md`: Current implementation status, verification results, completed work, gaps, and recommended next steps.
 - `manual-phase1-validation-checklist.md`: Manual checklist for validating the real Codex hook to WPF refresh loop.
-- `2026-06-04-completed-work-log.md`: Chinese persisted summary of completed project work as of 2026-06-04.
+- `2026-06-04-completed-work-log.md`: Persisted summary of completed project work as of 2026-06-04.
 - `2026-06-04-phase2-base-milestone.md`: Phase 2 base usable milestone record and remaining acceptance work.
 - `2026-06-04-real-hook-debug-record.md`: Real Codex hook debugging record covering hook failures, Smart App Control blocking Agent DLL hooks, PowerShell hook fallback, and final event-flow validation.
-- `2026-06-05-documentation-state-policy-log.md`: Documentation update record for the canonical state/completion policy and UTF-8 Chinese document recovery.
+- `2026-06-05-documentation-state-policy-log.md`: Documentation update record for the canonical state/completion policy and UTF-8 document recovery.
 
 ## 01-planning
 
@@ -40,8 +40,8 @@ This directory is organized by document purpose.
 
 ## 07-user-guide
 
-- `usage-tutorial.md`: Complete Chinese tutorial for using the portable package, one-command startup, installing Codex hooks, using the task drawer, deleting task rows, verifying status updates, exporting diagnostics, and uninstalling hooks.
+- `usage-tutorial.md`: Complete tutorial for using the portable package, one-command startup, installing Codex hooks, using the task drawer, deleting task rows, verifying status updates, exporting diagnostics, and uninstalling hooks.
 
 ## Notes
 
-The long Chinese planning, product design, and analysis documents were rewritten and saved as UTF-8 on 2026-06-04 after mojibake was found.
+The long planning, product design, and analysis documents were rewritten and saved as UTF-8 on 2026-06-04 after mojibake was found.

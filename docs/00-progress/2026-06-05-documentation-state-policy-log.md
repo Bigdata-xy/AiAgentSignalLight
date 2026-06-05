@@ -1,19 +1,19 @@
-# 2026-06-05 文档与状态策略统一落盘记录
+# 2026-06-05 Documentation And State Policy Consolidation Record
 
-本次更新只做项目文档落盘和描述逻辑统一，不执行 Git 操作。
+This update only consolidated project documentation and unified descriptive logic. No Git operations were performed.
 
-## 更新范围
+## Update Scope
 
-新增：
+Added:
 
 - `docs/04-protocol/state-completion-policy.md`
 
-恢复并重写为 UTF-8：
+Recovered and rewrote as UTF-8:
 
 - `README.zh-CN.md`
 - `docs/05-engineering/reproducible-project-state-guide.md`
 
-同步更新：
+Updated for consistency:
 
 - `README.md`
 - `docs/03-architecture/architecture.md`
@@ -22,20 +22,20 @@
 - `docs/README.md`
 - `docs/00-progress/current-completion-record.md`
 
-## 统一状态口径
+## Unified State Policy
 
-| 灯色 | 含义 | 来源 |
+| Lamp | Meaning | Source |
 |---|---|---|
-| 红灯 | 正在执行 | `UserPromptSubmit`、`PreToolUse`、`PostToolUse` 或 Agent running/thinking/red |
-| 黄灯 | 等待人工授权 | `PermissionRequest` |
-| 绿灯 | 任务完成或空闲 | Codex `Stop` 或 Codex 明确取消授权/中断 |
+| Red | Running | `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, or Agent running/thinking/red |
+| Yellow | Waiting for manual authorization | `PermissionRequest` |
+| Green | Task completed or idle | Codex `Stop` or explicit Codex authorization cancellation / interruption |
 
-完成判定只接受：
+Completion decisions accept only:
 
-- Codex `Stop` hook。
-- Codex 明确取消授权或中断当前 turn。
+- Codex `Stop` hook.
+- Codex explicitly cancels authorization or interrupts the current turn.
 
-不再接受这些手动完成状态作为真实完成依据：
+These manual completion states are no longer accepted as real completion authority:
 
 ```text
 completed
@@ -44,41 +44,41 @@ idle
 green
 ```
 
-这样可以避免任务仍在执行过程中误变绿。
+This avoids incorrectly turning green while a task is still running.
 
-## 授权流程口径
+## Authorization Flow Policy
 
-当前真实状态转换：
+Current real state transitions:
 
 ```text
-提交 prompt -> 红灯
-Codex 请求授权 -> 黄灯
-授权通过并收到继续执行信号 -> 红灯
-Codex Stop 或明确取消/中断 -> 绿灯
+Submit prompt -> red
+Codex requests authorization -> yellow
+Authorization is approved and a continued-execution signal is received -> red
+Codex Stop or explicit cancellation/interruption -> green
 ```
 
-说明：
+Notes:
 
-- 黄灯没有固定超时。
-- SignalLight 不通过进程命令行猜测用户是否点击 `Yes`。
-- 授权通过后，只有收到 Codex 后续 `PreToolUse`、`PostToolUse` 或明确 approval 记录，才切回红灯。
-- 如果用户选择 `No` 并导致 Codex 中断当前 turn，则通过 Codex 明确取消/中断文本转为完成/空闲。
+- Yellow has no fixed timeout.
+- SignalLight does not guess from process command lines whether the user clicked `Yes`.
+- After authorization is approved, SignalLight switches back to red only after receiving a later Codex `PreToolUse`, `PostToolUse`, or explicit approval record.
+- If the user selects `No` and Codex interrupts the current turn, SignalLight uses explicit Codex cancellation / interruption text to move the task to completed / idle.
 
-## 绿灯确认窗口
+## Green Confirmation Window
 
-UI 收到完成事件后不会立刻显示绿灯，而是等待 0.8 秒确认窗口。
+After the UI receives a completion event, it does not show green immediately. It waits for a 0.8 second confirmation window.
 
-如果窗口内出现新的红灯或黄灯事件，绿灯显示会被取消。
+If a new red or yellow event appears during the window, green display is canceled.
 
-目的：
+Purpose:
 
-- 避免执行过程中出现短暂绿灯闪烁。
-- 避免 `Stop` 后马上进入下一段执行时给用户错误完成感。
+- Avoid a brief green flash during execution.
+- Avoid giving the user a false completion signal when Codex enters the next execution stage immediately after `Stop`.
 
-## 文档维护要求
+## Documentation Maintenance Requirements
 
-- 当前事实以代码、脚本和 `docs/04-protocol/state-completion-policy.md` 为准。
-- 用户教程负责说明“如何使用”。
-- 工程现状文档负责说明“如何复现、如何排查、为什么这样做”。
-- 历史进度文档可以保留过程，但新增里程碑必须明确当前实现。
-- 中文文档必须保持 UTF-8。
+- Current facts are determined by the code, scripts, and `docs/04-protocol/state-completion-policy.md`.
+- The user tutorial explains how to use the product.
+- The engineering state document explains how to reproduce the project state, how to troubleshoot it, and why the current implementation is shaped this way.
+- Historical progress documents may keep process history, but new milestone records must explicitly update the current implementation if history conflicts with it.
+- All formal documentation must remain UTF-8.

@@ -1,34 +1,34 @@
-# Smart App Control 拦截与 DLL 启动方案
+# Smart App Control Blocking And DLL Startup Strategy
 
 Date: 2026-06-04
 
-## 1. 问题现象
+## 1. Symptom
 
-运行早期便携包中的 apphost exe 时，PowerShell 可能出现：
+When running the apphost exe from an early portable package, PowerShell may show:
 
 ```text
-程序 SignalLight.App.exe 无法运行：应用程序控制策略已阻止此文件。
+SignalLight.App.exe cannot run: the application control policy has blocked this file.
 ```
 
-同时，Codex hooks 仍可能已经成功安装到：
+At the same time, Codex hooks may already have been installed successfully to:
 
 ```text
 C:\Users\<user>\.codex\hooks.json
 ```
 
-这说明 hook 配置写入和 App 进程启动是两个问题。hooks 可以安装成功，但如果 App 或 Agent exe 被系统阻止，红黄绿状态链路仍无法闭环。
+This means hook configuration writes and App process startup are two separate issues. Hooks can install successfully, but if the App or Agent exe is blocked by the system, the red/yellow/green state chain still cannot close the loop.
 
-## 2. 排查结论
+## 2. Troubleshooting Conclusion
 
-AppLocker 日志显示：
+AppLocker logs show:
 
 ```text
-AppLocker 组件在此 SKU 上不可用
+The AppLocker component is not available on this SKU.
 ```
 
-这说明当前拦截不是由 AppLocker 规则直接导致。
+This means the current block is not directly caused by AppLocker rules.
 
-Code Integrity 日志显示：
+Code Integrity logs show:
 
 ```text
 ProviderName: Microsoft-Windows-CodeIntegrity
@@ -36,79 +36,79 @@ Id: 3118
 Message: Smart App Control Block Details
 ```
 
-因此根因归类为：
+Therefore, the root cause is classified as:
 
 ```text
-Smart App Control / Code Integrity 拦截本地未签名 exe。
+Smart App Control / Code Integrity blocking local unsigned exe files.
 ```
 
-## 3. 为什么最开始 exe 可以运行
+## 3. Why The Initial exe Could Run
 
-最开始能运行，不代表后续重新打包后的 exe 会继续被信任。Windows 的应用控制策略可能参考：
+Being able to run at first does not mean the exe will remain trusted after later repackaging. Windows application control policy may consider:
 
-- 文件哈希。
-- 文件签名。
-- 文件来源标记。
-- 文件信誉。
-- 路径策略。
-- Smart App Control 当前状态。
+- File hash.
+- File signature.
+- File origin marker.
+- File reputation.
+- Path policy.
+- Current Smart App Control state.
 
-每次重新 `dotnet publish` 或重新打包后，`SignalLight.App.exe` 和 `SignalLight.Agent.exe` 的内容可能变化，文件哈希也会变化。即使文件名相同，系统也可能把它视为新的未知程序。
+Each time `dotnet publish` or packaging runs again, the contents of `SignalLight.App.exe` and `SignalLight.Agent.exe` may change, and their file hashes also change. Even if the filenames are the same, the system may treat them as new unknown programs.
 
-如果旧 run 目录被删除，再重新解压新包，原先可运行的旧 exe 信任状态也不会自动转移到新文件。
+If the old run directory is deleted and a new package is extracted again, the trust state of the old runnable exe does not automatically transfer to the new file.
 
-## 4. exe 方式与 DLL 方式区别
+## 4. Difference Between exe And DLL Startup
 
-### exe 方式
+### exe Mode
 
 ```powershell
 .\app\SignalLight.App.exe
 .\agent\SignalLight.Agent.exe
 ```
 
-优点：
+Advantages:
 
-- 像普通 Windows 程序一样直接运行。
-- 可以双击启动。
-- 适合已签名、已被系统信任的正式发行环境。
+- Runs directly like a normal Windows program.
+- Can be started by double-clicking.
+- Suitable for signed official release environments already trusted by the system.
 
-缺点：
+Disadvantages:
 
-- 当前 exe 是本地构建的未签名程序。
-- Smart App Control 可能把它识别为未知程序并阻止。
-- 重新打包后哈希变化，可能再次触发拦截。
+- The current exe is a locally built unsigned program.
+- Smart App Control may identify it as unknown and block it.
+- Repackaging changes the hash and may trigger blocking again.
 
-### DLL + dotnet 方式
+### DLL + dotnet Mode
 
 ```powershell
 dotnet .\app\SignalLight.App.dll
 dotnet .\agent\SignalLight.Agent.dll
 ```
 
-优点：
+Advantages:
 
-- 实际启动进程是系统已信任的 `dotnet.exe`。
-- 可以避开 Smart App Control 对本地未签名 apphost exe 的拦截。
-- App UI、Codex hooks、Agent 写入、任务抽屉、任务删除等功能保持不变。
+- The actual startup process is the system-trusted `dotnet.exe`.
+- It can avoid Smart App Control blocking local unsigned apphost exe files.
+- App UI, Codex hooks, Agent writes, task drawer, and task deletion behavior remain unchanged.
 
-缺点：
+Disadvantages:
 
-- 需要本机安装 .NET 8 Runtime 或 SDK。
-- 不能直接双击 DLL 启动。
-- 启动命令不如 exe 直观。
+- Requires .NET 8 Runtime or SDK installed on the machine.
+- A DLL cannot be started by double-clicking directly.
+- The startup command is less intuitive than an exe.
 
-## 5. 当前采用方案
+## 5. Current Adopted Strategy
 
-当前项目保留全部功能，但便携包改为 framework-dependent DLL 运行方式。
+The project keeps all functionality, but the portable package now uses framework-dependent DLL startup.
 
-打包脚本使用：
+The packaging script uses:
 
 ```powershell
 --self-contained false
 -p:UseAppHost=false
 ```
 
-生成：
+It generates:
 
 ```text
 app\SignalLight.App.dll
@@ -120,80 +120,80 @@ agent\SignalLight.Agent.runtimeconfig.json
 agent\SignalLight.Agent.deps.json
 ```
 
-不再依赖：
+It no longer depends on:
 
 ```text
 app\SignalLight.App.exe
 agent\SignalLight.Agent.exe
 ```
 
-## 6. 当前启动链路
+## 6. Current Startup Chain
 
-用户执行：
+The user runs:
 
 ```powershell
 cd "B:\AI Traffic Signal"
 .\start-signal-light.ps1
 ```
 
-脚本执行：
+The script runs:
 
 ```text
-1. 解压 dist\SignalLight-Portable-win-x64.zip
-2. 对 zip 和解压文件执行 Unblock-File
-3. 运行 install-hooks.ps1
-4. 后台启动 dotnet app\SignalLight.App.dll
+1. Extract dist\SignalLight-Portable-win-x64.zip
+2. Run Unblock-File on the zip and extracted files
+3. Run install-hooks.ps1
+4. Start dotnet app\SignalLight.App.dll in the background
 ```
 
-Codex hook 执行：
+Codex hook execution:
 
 ```text
 Codex hook event
 -> powershell hooks\codex-hook.ps1 -EventName <event>
--> 写入 %LOCALAPPDATA%\SignalLight
--> App 监听 snapshot / diagnostics 并刷新红黄绿 UI
+-> write to %LOCALAPPDATA%\SignalLight
+-> App watches snapshot / diagnostics and refreshes the red/yellow/green UI
 ```
 
-当前本机环境中，直接加载便携包里的 `SignalLight.Agent.dll` 会被应用控制策略拦截，因此真实 Codex lifecycle hooks 使用纯 PowerShell hook 脚本直接写 JSON。Agent DLL 仍保留在包中用于开发、手工 emit 或后续环境兼容，但不是当前真实 Codex hook 的主入口。
+In the current local environment, directly loading `SignalLight.Agent.dll` from the portable package can be blocked by application control policy. Therefore, real Codex lifecycle hooks use the pure PowerShell hook script to write JSON directly. The Agent DLL remains in the package for development, manual emit, or future environment compatibility, but it is not the current main entry point for real Codex hooks.
 
-App 由启动脚本作为独立后台进程启动。PowerShell 终端关闭后，SignalLight 应继续运行；退出由托盘菜单 `Exit` 控制。
+The App is started by the startup script as an independent background process. After the PowerShell terminal closes, SignalLight should keep running. Exit is controlled by the tray menu item `Exit`.
 
-## 7. 验证命令
+## 7. Verification Commands
 
-构建：
+Build:
 
 ```powershell
 dotnet build SignalLight.sln
 ```
 
-打包：
+Package:
 
 ```powershell
 tools\package-portable.ps1
 ```
 
-阶段验证：
+Phase validation:
 
 ```powershell
 tools\validate-phase1.ps1 -Configuration Release
 ```
 
-检查便携包目录：
+Check portable package directories:
 
 ```powershell
 Get-ChildItem ".\dist\SignalLight-Portable-win-x64\app"
 Get-ChildItem ".\dist\SignalLight-Portable-win-x64\agent"
 ```
 
-应看到 `.dll`、`.deps.json`、`.runtimeconfig.json`，不应依赖 `SignalLight.App.exe` 或 `SignalLight.Agent.exe`。
+You should see `.dll`, `.deps.json`, and `.runtimeconfig.json`; the package should not depend on `SignalLight.App.exe` or `SignalLight.Agent.exe`.
 
-## 8. 后续可选方案
+## 8. Future Optional Strategies
 
-如果未来希望恢复 exe 方式，应优先考虑：
+If exe mode should be restored later, prioritize:
 
-- 为 `SignalLight.App.exe` 和 `SignalLight.Agent.exe` 做代码签名。
-- 使用安装器安装到受信任目录。
-- 在 Windows 安全策略中允许发布目录。
-- 建立稳定版本号和发布哈希，减少频繁未知文件变化。
+- Code-sign `SignalLight.App.exe` and `SignalLight.Agent.exe`.
+- Use an installer to install into a trusted directory.
+- Allow the release directory in Windows security policy.
+- Establish stable versioning and release hashes to reduce frequent unknown-file changes.
 
-在未签名前，DLL + dotnet 方式是当前本机 Smart App Control 环境下更稳的运行策略。
+Before signing is available, DLL + dotnet mode is the more stable runtime strategy in the current local Smart App Control environment.

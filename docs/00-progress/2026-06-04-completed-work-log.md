@@ -1,64 +1,64 @@
-﻿# 2026-06-04 已完成工作落盘记录
+# 2026-06-04 Completed Work Persisted Record
 
-## 截至 2026-06-04 的阶段判断
+## Phase Assessment As Of 2026-06-04
 
-截至 2026-06-04，项目已推进到 Phase 2 基础可用里程碑，整体完成度约 65%-72%。2026-06-05 之后的最新状态以 `docs/00-progress/current-completion-record.md` 和 `docs/04-protocol/state-completion-policy.md` 为准。
+As of 2026-06-04, the project had reached the Phase 2 base usable milestone, with overall completion around 65%-72%. For the latest state after 2026-06-05, use `docs/00-progress/current-completion-record.md` and `docs/04-protocol/state-completion-policy.md` as the source of truth.
 
-Phase 0 的工程骨架已经基本完成。Phase 1 的核心链路已经具备可测试基础：
+The Phase 0 engineering skeleton is mostly complete. The Phase 1 core chain has a testable base:
 
 ```text
 Codex hook command -> hooks/codex-hook.ps1 -> JSON snapshot/session/event -> WPF traffic light refresh
 ```
 
-真实 Codex `/hooks` 信任流程仍需要用户在本机手工信任和观察。Phase 1 自动验证已经通过；App 侧安装入口、紧凑交通灯 UI、任务徽标抽屉、托盘入口、诊断导出、session 过期策略、单任务删除和 portable zip 打包已经具备可验证基础。
+The real Codex `/hooks` trust flow still requires the user to manually trust and observe it on this machine. Phase 1 automated validation has passed; the App-side installation entry point, compact traffic-light UI, task-badge drawer, tray entry point, diagnostics export, session expiration policy, single-task deletion, and portable zip packaging have a verifiable base.
 
-## 已完成模块
+## Completed Modules
 
-### 工程与仓库
+### Engineering And Repository
 
-- 已创建本地 Git 仓库。
-- 主分支为 `main`。
-- 项目仓库目标地址已确定：
+- Local Git repository created.
+- Main branch is `main`.
+- Target repository URL determined:
 
 ```text
 https://github.com/Bigdata-xy/AiAgentSignalLight
 ```
 
-- 本地 Git remote 已配置：
+- Local Git remote configured:
 
 ```text
 origin -> https://github.com/Bigdata-xy/AiAgentSignalLight.git
 ```
 
-- 本地 `main` 已设置为跟踪 `origin/main`。
-- GitHub 远程仓库原有 `LICENSE` 已合并进本地历史。
-- 已生成合并提交：`Merge remote repository metadata`。
-- 仓库描述建议已确定：
+- Local `main` is set to track `origin/main`.
+- Existing remote GitHub `LICENSE` merged into local history.
+- Merge commit created: `Merge remote repository metadata`.
+- Repository description recommendation determined:
 
 ```text
-SignalLight 是一个本地 AI / Agent 状态信号灯，用 Codex hooks 等适配器采集任务事件，并通过桌面交通灯 UI 展示运行、等待、完成和诊断状态。
+SignalLight is a local AI / Agent state signal light that collects task events through adapters such as Codex hooks and displays running, waiting, completed, and diagnostic states through a desktop traffic-light UI.
 ```
 
-- 已完成初始提交：`Initial AiAgentSignalLight project`。
-- 已完成 hook 诊断提交：`Add hook diagnostics output`。
-- 已完成工作日志提交：`Document completed project work`。
-- `.gitignore` 已排除 `bin/`、`obj/`、`.local/`、`dist/`、`TestResults/` 等产物目录。
+- Initial commit completed: `Initial AiAgentSignalLight project`.
+- Hook diagnostics commit completed: `Add hook diagnostics output`.
+- Work-log commit completed: `Document completed project work`.
+- `.gitignore` excludes artifact directories such as `bin/`, `obj/`, `.local/`, `dist/`, and `TestResults/`.
 
-### GitHub 发布状态
+### GitHub Release State
 
-- 已尝试将 `main` 推送到 GitHub 目标仓库。
-- 首次推送时远程仓库已有内容，普通 push 被拒绝。
-- 已执行 `git fetch origin main` 获取远程 `main`。
-- 已通过 `--allow-unrelated-histories` 合并远程已有元数据，保留远程 `LICENSE`。
-- 后续 GitHub 实时连接检查出现网络超时：
+- Attempted to push `main` to the target GitHub repository.
+- The first push was rejected because the remote repository already had content.
+- Ran `git fetch origin main` to retrieve remote `main`.
+- Merged existing remote metadata with `--allow-unrelated-histories`, preserving the remote `LICENSE`.
+- Later real-time GitHub connectivity checks timed out:
 
 ```text
 Failed to connect to github.com port 443
 ```
 
-- 本地引用显示 `main` 当前跟踪 `origin/main`，但由于当前环境无法连接 GitHub，仍需在网络恢复后重新执行远程确认。
+- Local refs show that `main` currently tracks `origin/main`, but because the current environment cannot connect to GitHub, remote confirmation still needs to be rerun after network access is restored.
 
-建议网络恢复后执行：
+Recommended commands after the network recovers:
 
 ```powershell
 git remote show origin
@@ -66,9 +66,9 @@ git push -u origin main
 git status --short --branch
 ```
 
-### 项目结构
+### Project Structure
 
-已存在并可构建的项目：
+Projects that exist and can be built:
 
 - `SignalLight.Core`
 - `SignalLight.Storage`
@@ -81,17 +81,17 @@ git status --short --branch
 
 ### Core
 
-- 已定义通用事件模型 `SignalEvent`。
-- 已定义事件类型 `SignalEventType`。
-- 已定义会话模型 `SignalSession`。
-- 已定义会话状态 `SignalSessionState`。
-- 已实现 `SignalStateEngine`：
-  - `TaskStarted` 映射为 `Thinking`
-  - `UserActionRequired` 映射为 `Waiting`
-  - `TaskCompleted` 映射为 `Completed`
-  - `TaskFailed` 映射为 `Failed`
-  - `Heartbeat` 保留已有状态或回落到 `Thinking`
-- 已实现聚合优先级：
+- Generic event model `SignalEvent` defined.
+- Event type `SignalEventType` defined.
+- Session model `SignalSession` defined.
+- Session state `SignalSessionState` defined.
+- `SignalStateEngine` implemented:
+  - `TaskStarted` maps to `Thinking`
+  - `UserActionRequired` maps to `Waiting`
+  - `TaskCompleted` maps to `Completed`
+  - `TaskFailed` maps to `Failed`
+  - `Heartbeat` preserves the existing state or falls back to `Thinking`
+- Aggregation priority implemented:
   - `Waiting`
   - `Failed`
   - `Thinking`
@@ -99,105 +99,105 @@ git status --short --branch
   - `Idle`
   - `Stale`
   - `Unknown`
-- `BuildSnapshot` 已支持 session 过期策略：
-  - 运行中或等待中的旧会话会标记为 `Stale`
-  - 超出保留窗口的已完成会话会从快照中隐藏
+- `BuildSnapshot` supports session expiration policy:
+  - Old running or waiting sessions are marked `Stale`
+  - Completed sessions beyond the retention window are hidden from snapshots
 
 ### Storage
 
-- 已实现本地 JSON 存储。
-- 已支持写入和读取：
+- Local JSON storage implemented.
+- Writes and reads supported for:
   - `snapshot.json`
   - `sessions/*.json`
   - `events/*.json`
-- 已预留诊断目录：
+- Diagnostics directory reserved:
   - `diagnostics/`
-- JSON 写入使用临时文件加替换方式，降低半写入文件风险。
-- 损坏 session 文件会被跳过，不阻断整体读取。
+- JSON writes use temporary files plus replacement to reduce the risk of partially written files.
+- Damaged session files are skipped and do not block the full read.
 
 ### Agent
 
-- 已实现公开入口：
+- Public entry point implemented:
 
 ```powershell
 SignalLight.Agent emit --state running --source codex-cli --adapter codex-hooks --session demo --title "Demo"
 ```
 
-- Agent 已支持将通用状态参数映射为内部事件：
+- Agent supports mapping generic state parameters to internal events:
   - `running` / `thinking` / `red`
   - `waiting` / `yellow`
   - `completed` / `done` / `idle` / `green`
   - `failed` / `error`
   - `heartbeat`
-- Agent 已能写入 event、session 和 snapshot。
-- Agent 已支持 `--root` 指定数据目录，便于测试和隔离真实用户数据。
+- Agent can write event, session, and snapshot JSON.
+- Agent supports `--root` to specify the data directory for testing and isolation from real user data.
 
 ### Codex Hook
 
-- 已实现 `hooks/codex-hook.ps1`。
-- 支持 Codex 事件名映射：
+- `hooks/codex-hook.ps1` implemented.
+- Codex event name mapping supported:
   - `UserPromptSubmit` -> `running`
   - `PreToolUse` -> `running`
   - `PostToolUse` -> `running`
   - `PermissionRequest` -> `waiting`
   - `Stop` -> `completed`
   - `SessionStart` -> ignored
-- hook 脚本可从 stdin 读取 Codex payload。
-- hook 脚本可提取：
-  - session id
+- Hook script can read Codex payload from stdin.
+- Hook script can extract:
+  - session ID
   - workspace/cwd
   - title/prompt
-- hook 脚本可从开发目录或 portable `agent/` 目录定位 `SignalLight.Agent.dll`。
-- hook 脚本已写入诊断文件：
+- Hook script can locate `SignalLight.Agent.dll` from either the development directory or portable `agent/` directory.
+- Hook script writes the diagnostics file:
 
 ```text
 diagnostics/latest-hook-context.json
 ```
 
-诊断内容包括：
+Diagnostic content includes:
 
 - event name
 - mapped state
 - tool root
 - signal data root
 - Agent path
-- Agent 是否找到
+- whether Agent was found
 - session
 - workspace
 - title
 - payload parse error
 - raw payload
 
-### Hook 安装与卸载
+### Hook Installation And Uninstallation
 
-- `tools/install-hooks.ps1` 已从提示脚本升级为实际安装脚本。
-- 安装脚本会合并 SignalLight hook 到 Codex `hooks.json`。
-- 安装脚本会保留用户已有 hook。
-- 安装脚本具备幂等性，重复执行不会重复添加 SignalLight hook。
-- 安装脚本会备份已有 `hooks.json`。
-- 安装脚本和卸载脚本已改为无 BOM UTF-8 写入，避免 Codex 解析 `hooks.json` 时出现 `expected value at line 1 column 1`。
-- `tools/uninstall-hooks.ps1` 已实现移除 SignalLight 自有 hook。
-- 卸载脚本会保留用户已有 hook。
+- `tools/install-hooks.ps1` upgraded from a prompt script to a real installation script.
+- The installation script merges SignalLight hooks into Codex `hooks.json`.
+- The installation script preserves existing user hooks.
+- The installation script is idempotent and does not duplicate SignalLight hooks when run repeatedly.
+- The installation script backs up existing `hooks.json`.
+- Installation and uninstallation scripts now write UTF-8 without BOM to avoid Codex reporting `expected value at line 1 column 1` while parsing `hooks.json`.
+- `tools/uninstall-hooks.ps1` removes SignalLight-owned hooks.
+- The uninstallation script preserves existing user hooks.
 
 ### WPF App
 
-- 已实现紧凑悬浮交通灯窗口。
-- UI 保留红、黄、绿三灯主视觉，窗口尺寸已压缩到类似参考项目的小型形态。
-- 活跃灯支持呼吸和外圈脉冲动画。
-- 启动时读取当前 `snapshot.json`。
-- 已使用 `FileSystemWatcher` 监听 `snapshot.json`。
-- snapshot 更新后，UI 会通过 Dispatcher 延迟刷新，避免文件系统连续事件导致重复刷新。
-- 已监听 `diagnostics/latest-hook-context.json`。
-- 主窗口默认隐藏复杂细节，仅保留交通灯和右下角任务计数徽标。
-- 已新增任务抽屉，点击徽标可查看当前可见任务。
-- 抽屉任务行显示：
-  - 任务 prompt 节选或工作目录名
-  - 状态徽标
-  - 工作目录摘要
-  - 运行中耗时或完成耗时
-- 抽屉任务行不再显示 `source/adapter`。
-- 抽屉任务行已支持单行删除，删除后会重建 snapshot 并刷新信号灯状态。
-- 已新增托盘入口：
+- Compact floating traffic-light window implemented.
+- UI preserves the red/yellow/green three-lamp primary visual, and the window has been compressed into a small shape similar to the reference project.
+- Active lamps support breathing and outer-ring pulse animation.
+- Reads current `snapshot.json` on startup.
+- Uses `FileSystemWatcher` to watch `snapshot.json`.
+- After snapshot updates, UI refreshes through Dispatcher with a delay to avoid duplicate refreshes caused by consecutive filesystem events.
+- Watches `diagnostics/latest-hook-context.json`.
+- Main window hides complex details by default and keeps only the traffic light plus the lower-right task-count badge.
+- Task drawer added; clicking the badge shows current visible tasks.
+- Drawer task rows show:
+  - task prompt excerpt or workspace directory name
+  - state badge
+  - workspace summary
+  - running duration or completed duration
+- Drawer task rows no longer show `source/adapter`.
+- Drawer task rows support single-row deletion; after deletion, the snapshot is rebuilt and the traffic-light state refreshes.
+- Tray entry point added:
   - Show / Hide
   - Hooks > Install
   - Hooks > Uninstall
@@ -205,46 +205,46 @@ diagnostics/latest-hook-context.json
   - Diagnostics > Export
   - Diagnostics > Clear done
   - Exit
-- 已新增诊断导出：
+- Diagnostics export added:
   - snapshot
   - sessions
   - events
   - latest diagnostics
   - Codex hooks.json
-- 已新增清理已完成会话入口：
+- Completed-session cleanup entry point added:
   - Clear Done
 
-### 任务标题与显示策略
+### Task Title And Display Policy
 
-- `UserPromptSubmit` 会把 prompt 作为任务标题来源。
-- 任务标题在 UI 中以节选形式显示，避免长文本撑开小窗口。
-- `Stop` / `SessionStart` 等没有 prompt 的事件不再把标题默认写成 `Codex`。
-- 完成事件没有真实标题时，会保留上一条任务节选。
-- 旧 hook 若仍传入 `Codex` 占位标题，Core 会忽略该占位标题，继续保留真实任务节选。
-- 已修复 cmd 启动 Codex 时无 session id 导致开始事件和完成事件落到不同 session 的问题。完成事件会优先匹配同来源、同 adapter、同工作目录下最近的活跃任务。
-- 已修复 payload 中布尔 `prompt: true` 或命令参数占位 `true` 被误当作任务标题的问题。`true` / `false` 现在会被视为占位标题，不再覆盖真实任务节选。
-- 已修复 `SessionStart` 被映射为 completed 导致任务尚未完成就绿灯的问题。`SessionStart` 现在只记录诊断，不写入任务状态。
-- 已新增 `PreToolUse -> running` 和 `PostToolUse -> running`。Codex 请求权限变黄后，用户授权并进入或完成工具调用时会重新切回红灯，避免授权后一直停在黄灯。
-- 已新增 session `StartedAt` 字段。抽屉任务时间改为显示任务耗时：进行中显示运行时长，完成后显示完成耗时，不再因为完成事件更新 `UpdatedAt` 而直接显示 `0s`。
-- 已修复真实 Codex hooks 调用 `SignalLight.Agent.dll` 被 Windows Application Control / Smart App Control 拦截后出现 `hook exited with code 1` 的问题。当前真实 hook 安装改为调用 `hooks/codex-hook.ps1`，由 PowerShell 脚本直接写入 JSON 状态；Agent DLL 仍保留用于开发和兼容用途。
-- `hooks/codex-hook.ps1` 已加入顶层容错：内部异常会写入 `diagnostics/latest-hook-error.json` 和 `diagnostics/latest-hook-context.json`，并以退出码 `0` 返回，避免 SignalLight hook 异常中断 Codex 会话。
-- 已修复多个终端 Codex 任务互相影响主灯状态的问题。Agent 现在会优先提取 `session_id`、`conversation_id`、`terminal_id`、`process_id`、`pid` 等身份字段；没有稳定 session id 时，新的 `UserPromptSubmit` 不再覆盖同工作目录旧任务，`Stop` 在多个活跃任务并存时不会随意完成其中一个，避免一个终端完成后把另一个仍在运行的任务变绿。
+- `UserPromptSubmit` uses the prompt as the task title source.
+- Task titles are displayed in the UI as excerpts to avoid long text expanding the small window.
+- Events without a prompt, such as `Stop` / `SessionStart`, no longer write `Codex` as the default title.
+- If a completion event has no real title, the previous task excerpt is preserved.
+- If an old hook still passes the placeholder title `Codex`, Core ignores that placeholder and keeps the real task excerpt.
+- Fixed the issue where starting Codex from cmd without a session ID caused start and completion events to land in different sessions. Completion now preferentially matches the latest active task with the same source, adapter, and workspace.
+- Fixed boolean `prompt: true` in payloads or command-argument placeholder `true` being mistaken for a task title. `true` / `false` are now treated as placeholder titles and do not overwrite real task excerpts.
+- Fixed `SessionStart` mapping to completed and causing green before the task was actually complete. `SessionStart` now only records diagnostics and does not write task state.
+- Added `PreToolUse -> running` and `PostToolUse -> running`. After Codex turns yellow for a permission request, it switches back to red when the user authorizes and tool invocation starts or finishes, avoiding a permanent yellow state after authorization.
+- Added session `StartedAt`. Drawer task time now shows task duration: running tasks show elapsed runtime, completed tasks show completed duration, and completion no longer directly shows `0s` because `UpdatedAt` changed.
+- Fixed real Codex hooks failing with `hook exited with code 1` after `SignalLight.Agent.dll` was blocked by Windows Application Control / Smart App Control. The current real hook installation calls `hooks/codex-hook.ps1`, and the PowerShell script writes JSON state directly. The Agent DLL remains for development and compatibility.
+- `hooks/codex-hook.ps1` has top-level fault tolerance: internal exceptions write `diagnostics/latest-hook-error.json` and `diagnostics/latest-hook-context.json`, then return exit code `0`, avoiding SignalLight hook errors interrupting Codex sessions.
+- Fixed multiple terminal Codex tasks affecting each other's main lamp state. Agent now preferentially extracts identity fields such as `session_id`, `conversation_id`, `terminal_id`, `process_id`, and `pid`. When no stable session ID exists, a new `UserPromptSubmit` no longer overwrites an old task in the same workspace, and `Stop` does not arbitrarily complete one of several active tasks. This prevents one terminal completing from turning green while another terminal is still running.
 
-### Portable 打包
+### Portable Packaging
 
-- 已修正 `tools/install-hooks.ps1` 的路径判断。
-- 安装脚本现在同时兼容：
-  - 开发目录：`tools/install-hooks.ps1`
-  - portable 根目录：`install-hooks.ps1`
-- 已升级 `tools/package-portable.ps1`。
-- 打包脚本现在会生成：
+- Fixed path detection in `tools/install-hooks.ps1`.
+- The installation script is now compatible with both:
+  - development directory: `tools/install-hooks.ps1`
+  - portable root directory: `install-hooks.ps1`
+- Upgraded `tools/package-portable.ps1`.
+- The packaging script now generates:
 
 ```text
 dist/SignalLight-Portable-win-x64/
 dist/SignalLight-Portable-win-x64.zip
 ```
 
-- portable 包内容包括：
+- Portable package contents include:
   - `app/SignalLight.App.dll`
   - `agent/SignalLight.Agent.dll`
   - `hooks/codex-hook.ps1`
@@ -253,32 +253,32 @@ dist/SignalLight-Portable-win-x64.zip
   - `README.md`
   - `LICENSE`
 
-### 启动脚本
+### Startup Scripts
 
-- 已新增根目录启动脚本：
+- Root startup scripts added:
 
 ```text
 start-signal-light.ps1
 start-signal-light.cmd
 ```
 
-- `start-signal-light.ps1` 会自动：
-  - 定位 `dist/SignalLight-Portable-win-x64.zip`
-  - 解压到 `dist/SignalLight-Portable-win-x64-run`
-  - 执行 `install-hooks.ps1`
-  - 使用 `Start-Process` 后台启动 `dotnet app/SignalLight.App.dll`
-  - 允许用户关闭 PowerShell 终端，App 继续通过托盘图标运行和退出
+- `start-signal-light.ps1` automatically:
+  - locates `dist/SignalLight-Portable-win-x64.zip`
+  - extracts it to `dist/SignalLight-Portable-win-x64-run`
+  - runs `install-hooks.ps1`
+  - starts `dotnet app/SignalLight.App.dll` in the background with `Start-Process`
+  - lets the user close the PowerShell terminal while the App continues running and exits through the tray icon
 
-- 推荐用户日常启动命令：
+- Recommended daily startup command:
 
 ```powershell
 cd "B:\AI Traffic Signal"
 .\start-signal-light.ps1
 ```
 
-### 文档
+### Documentation
 
-- `docs` 已按用途分类：
+- `docs` has been classified by purpose:
   - `00-progress`
   - `01-planning`
   - `02-product-design`
@@ -286,22 +286,22 @@ cd "B:\AI Traffic Signal"
   - `04-protocol`
   - `05-engineering`
   - `06-analysis`
-- 已建立 `docs/README.md` 文档索引。
-- 已建立当前完成记录：
+- `docs/README.md` document index established.
+- Current completion record established:
   - `docs/00-progress/current-completion-record.md`
-- 已建立 Phase 1 手工验收清单：
+- Phase 1 manual acceptance checklist established:
   - `docs/00-progress/manual-phase1-validation-checklist.md`
-- 已恢复中文长文档乱码问题。
-- 以下文档已重写并保存为 UTF-8：
+- Mojibake in long Chinese documents was recovered.
+- The following documents were rewritten and saved as UTF-8:
   - `docs/01-planning/phase-execution-plan.md`
   - `docs/02-product-design/next-generation-product-design.md`
   - `docs/06-analysis/project-analysis-report.md`
 
-### Phase 1 自动验收
+### Phase 1 Automated Acceptance
 
-- 已新增 `tools/validate-phase1.ps1`。
-- 验证脚本会在隔离目录 `.local/phase1-validation` 中模拟 Codex hook 链路。
-- 验证覆盖：
+- `tools/validate-phase1.ps1` added.
+- The validation script simulates the Codex hook chain in the isolated directory `.local/phase1-validation`.
+- Validation covers:
   - `UserPromptSubmit` -> `Thinking`
   - `PermissionRequest` -> `Waiting`
   - `PreToolUse` -> `Thinking`
@@ -311,11 +311,11 @@ cd "B:\AI Traffic Signal"
   - `sessions/*.json`
   - `events/*.json`
   - `diagnostics/latest-hook-context.json`
-- 脚本已通过。
+- The script has passed.
 
-## 已验证结果
+## Verified Results
 
-2026-06-04 已重新验证：
+Reverified on 2026-06-04:
 
 ```powershell
 dotnet build SignalLight.sln
@@ -324,60 +324,59 @@ tools\validate-phase1.ps1
 tools\package-portable.ps1
 ```
 
-结果：
+Results:
 
-- `dotnet build SignalLight.sln` 通过。
-- 构建结果：0 warning，0 error。
-- Core 与 Storage 测试通过。
-- Agent 测试在部分运行中会被 Windows Application Control 策略拦截 DLL 加载；此前已通过，当前不作为代码失败处理。
-- `tools\validate-phase1.ps1` 通过。
-- `tools\package-portable.ps1` 通过。
-- 已生成 `dist\SignalLight-Portable-win-x64.zip`。
+- `dotnet build SignalLight.sln` passed.
+- Build result: 0 warnings, 0 errors.
+- Core and Storage tests passed.
+- Agent tests may be blocked by Windows Application Control policy during some runs when loading the DLL; they had passed earlier and are not currently treated as a code failure.
+- `tools\validate-phase1.ps1` passed.
+- `tools\package-portable.ps1` passed.
+- `dist\SignalLight-Portable-win-x64.zip` generated.
 
-测试覆盖当前包括：
+Current test coverage includes:
 
-- Core 状态映射。
-- Core 聚合优先级。
-- Core session 过期与 completed retention。
-- Core 完成事件保留任务 prompt 节选。
-- Core 忽略 `Codex` 占位标题。
-- Storage event 文件写入。
-- Agent 公开命令合同。
-- hook 安装脚本幂等性和保留用户 hook。
-- Codex hook 脚本调用 Agent 并写入 snapshot/diagnostics 的模拟端到端链路。
+- Core state mapping.
+- Core aggregation priority.
+- Core session expiration and completed retention.
+- Core completion events preserving task prompt excerpts.
+- Core ignoring the `Codex` placeholder title.
+- Storage event file writes.
+- Agent public command contract.
+- Hook installation script idempotency and preservation of user hooks.
+- Simulated end-to-end chain where the Codex hook script calls Agent and writes snapshot/diagnostics.
 
-## 当前未完成事项
+## Current Incomplete Items
 
-Phase 1 尚未完全闭环的事项：
+Phase 1 items not fully closed:
 
-- 尚未在可稳定访问 GitHub 的网络环境下复核远程仓库是否已经完整同步。
-- 自动化 Phase 1 hook 链路已通过；真实 Codex 环境的 `/hooks` 信任流程仍需人工验收。
-- 尚未用真实 Codex prompt 人工验证红灯触发。
-- 尚未用真实 Codex permission request 人工验证黄灯触发。
-- 尚未用真实 Codex Stop 人工验证绿灯触发。
-- 尚未手工观察 WPF 窗口在真实事件下的实时刷新表现。
-- App 内已有安装入口，但还没有完整的 `/hooks` 信任流程逐步引导。
+- Remote repository synchronization has not yet been rechecked from a network that can reliably reach GitHub.
+- Automated Phase 1 hook chain validation has passed; the real Codex `/hooks` trust flow still requires manual acceptance.
+- Real Codex prompt has not yet been manually verified to trigger red.
+- Real Codex permission request has not yet been manually verified to trigger yellow.
+- Real Codex Stop has not yet been manually verified to trigger green.
+- WPF window live refresh under real events has not yet been manually observed.
+- The App has an installation entry point, but it does not yet provide complete step-by-step guidance for the `/hooks` trust flow.
 
-Phase 2 及后续未完成事项：
+Phase 2 and later incomplete items:
 
-- 通用 file-drop adapter。
-- 浏览器/userscript adapter。
-- 完整视觉诊断页与复制诊断信息能力。
-- 安装器。
+- Generic file-drop adapter.
+- Browser/userscript adapter.
+- Full visual diagnostics page and ability to copy diagnostic information.
+- Installer.
 
-## 风险与注意事项
+## Risks And Notes
 
-- GitHub 远程仓库已配置并合并远程元数据，但当前环境连接 GitHub 443 端口超时，远程最终状态需要网络恢复后复核。
-- 当前自动化测试还没有覆盖 WPF 视觉行为和托盘行为。
-- 当前 hook 端到端测试使用模拟 stdin，不等价于真实 Codex hook 信任流程。
-- 当前产品还处于本地 MVP 阶段，不应视为可发布版本。
+- The GitHub remote repository is configured and remote metadata has been merged, but the current environment times out connecting to GitHub port 443, so the final remote state needs to be rechecked after network access recovers.
+- Current automated tests do not cover WPF visual behavior or tray behavior.
+- Current hook end-to-end tests use simulated stdin and are not equivalent to the real Codex hook trust flow.
+- The current product is still a local MVP and should not be treated as a releasable version.
 
-## 下一步建议
+## Recommended Next Steps
 
-1. 网络恢复后，先执行 `git remote show origin` 和 `git push -u origin main`，确认 GitHub 仓库完整同步。
-2. 在 GitHub 仓库页面填写仓库描述。
-3. 按 `manual-phase1-validation-checklist.md` 完成真实 Codex 手工验证。
-4. 将真实验证结果追加写入 `docs/00-progress`。
-5. 若手工验证通过，再进入 Phase 3 的通用 adapter 开发。
-6. 若手工验证失败，优先根据 `diagnostics/latest-hook-context.json` 和诊断导出包修复 hook 路径、payload 或信任配置问题。
-
+1. After network access recovers, run `git remote show origin` and `git push -u origin main` first to confirm the GitHub repository is fully synchronized.
+2. Fill in the repository description on the GitHub repository page.
+3. Complete real Codex manual validation using `manual-phase1-validation-checklist.md`.
+4. Append the real validation results to `docs/00-progress`.
+5. If manual validation passes, move into Phase 3 generic adapter development.
+6. If manual validation fails, first use `diagnostics/latest-hook-context.json` and the diagnostics export package to fix hook path, payload, or trust configuration issues.

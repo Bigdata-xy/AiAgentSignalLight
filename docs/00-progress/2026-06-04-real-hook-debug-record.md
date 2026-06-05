@@ -35,7 +35,7 @@ Manual reproduction showed:
 
 ```text
 System.IO.FileLoadException
-应用程序控制策略已阻止此文件
+The application control policy has blocked this file.
 0x800711C7
 ```
 

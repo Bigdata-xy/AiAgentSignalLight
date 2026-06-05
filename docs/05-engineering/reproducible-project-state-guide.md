@@ -1,30 +1,30 @@
-# SignalLight 项目现状与可复现说明
+# SignalLight Project State And Reproducibility Guide
 
 Date: 2026-06-05
 
-本文档记录当前项目的真实实现、启动方式、状态策略、已解决问题和验证方式。不包含 Git 推送操作。
+This document records the current real implementation, startup method, state policy, resolved issues, and verification process. It does not include Git push operations.
 
-## 1. 项目定位
+## 1. Project Positioning
 
-SignalLight 是一个本地 AI / Agent 状态信号灯。当前 MVP 优先接入 Codex CLI hooks，把 Codex 的任务生命周期转换为本地 JSON 状态文件，再由 Windows WPF 小窗口显示红、黄、绿三种主要状态。
+SignalLight is a local AI / Agent state signal light. The current MVP prioritizes Codex CLI hooks: it converts the Codex task lifecycle into local JSON state files, then shows the three primary states, red, yellow, and green, in a small Windows WPF window.
 
-当前可用边界：
+Current usable scope:
 
-- Windows WPF 桌面 UI。
-- Codex CLI 本地 hooks。
-- 本地 JSON 存储。
-- 便携 zip 包。
-- 一键启动脚本。
-- 任务抽屉、任务删除、托盘操作和诊断导出。
+- Windows WPF desktop UI.
+- Local Codex CLI hooks.
+- Local JSON storage.
+- Portable zip package.
+- One-command startup script.
+- Task drawer, task deletion, tray actions, and diagnostics export.
 
-当前不是：
+Currently not included:
 
-- Codex 替代客户端。
-- 云服务。
-- 跨平台桌面发布版。
-- 已签名的正式 Windows 安装器。
+- A replacement Codex client.
+- A cloud service.
+- A cross-platform desktop release.
+- A signed official Windows installer.
 
-## 2. 当前架构
+## 2. Current Architecture
 
 ```text
 Codex lifecycle hook
@@ -34,101 +34,101 @@ Codex lifecycle hook
 -> traffic-light UI / task drawer / tray diagnostics
 ```
 
-主要项目：
+Main projects:
 
-- `src/SignalLight.Core`: 事件、会话、状态机和聚合规则。
-- `src/SignalLight.Storage`: 本地 JSON 读写和路径管理。
-- `src/SignalLight.Agent`: CLI 事件写入口。
-- `src/SignalLight.Adapters`: Codex、浏览器等适配器契约。
-- `src/SignalLight.App`: WPF 交通灯 UI。
-- `tools`: 安装 hooks、打包和验证脚本。
-- `hooks`: PowerShell hook 模板和兼容脚本。
-- `docs`: 规划、架构、协议、工程、教程和进度文档。
+- `src/SignalLight.Core`: events, sessions, state machine, and aggregation rules.
+- `src/SignalLight.Storage`: local JSON reads/writes and path management.
+- `src/SignalLight.Agent`: CLI event ingestion entry point.
+- `src/SignalLight.Adapters`: adapter contracts for Codex, browsers, and other sources.
+- `src/SignalLight.App`: WPF traffic-light UI.
+- `tools`: hook installation, packaging, and validation scripts.
+- `hooks`: PowerShell hook templates and compatibility scripts.
+- `docs`: planning, architecture, protocol, engineering, tutorial, and progress documents.
 
-## 3. 状态策略
+## 3. State Policy
 
-权威状态策略见：
+The authoritative state policy is:
 
 ```text
 docs/04-protocol/state-completion-policy.md
 ```
 
-简要规则：
+Brief rules:
 
-| Codex 事件 | SignalLight 状态 | 灯色 |
+| Codex event | SignalLight state | Lamp |
 |---|---|---|
-| `UserPromptSubmit` | `Thinking` | 红灯 |
-| `PermissionRequest` | `Waiting` | 黄灯 |
-| `PreToolUse` | `Thinking` | 红灯 |
-| `PostToolUse` | `Thinking` | 红灯 |
-| `Stop` | `Completed` | 绿灯 |
-| `SessionStart` | ignored | 不改变 |
+| `UserPromptSubmit` | `Thinking` | Red |
+| `PermissionRequest` | `Waiting` | Yellow |
+| `PreToolUse` | `Thinking` | Red |
+| `PostToolUse` | `Thinking` | Red |
+| `Stop` | `Completed` | Green |
+| `SessionStart` | ignored | No change |
 
-完成状态只接受：
+Completion state is accepted only from:
 
-- Codex `Stop` hook。
-- Codex 明确取消授权或中断当前 turn。
+- Codex `Stop` hook.
+- Codex explicitly cancels authorization or interrupts the current turn.
 
-手动 `Agent emit --state completed/done/idle/green` 会被忽略，不能把任务标记完成。
+Manual `Agent emit --state completed/done/idle/green` is ignored and cannot mark a task complete.
 
-黄灯没有固定时长。收到 `PermissionRequest` 后，如果没有真实后续信号，就持续显示黄灯。用户授权通过后，收到 `PreToolUse`、`PostToolUse` 或明确 approval 记录才切回红灯。
+Yellow has no fixed duration. After `PermissionRequest`, if no real follow-up signal arrives, the UI remains yellow. After the user approves authorization, the UI switches back to red only after receiving `PreToolUse`, `PostToolUse`, or an explicit approval record.
 
-UI 收到完成事件后有 0.8 秒绿灯确认窗口。如果窗口内出现新的红灯或黄灯事件，则取消绿灯显示。
+After the UI receives a completion event, it uses a 0.8 second green confirmation window. If a new red or yellow event appears during the window, green display is canceled.
 
-## 4. 本地数据
+## 4. Local Data
 
-默认数据目录：
+Default data directory:
 
 ```text
 %LOCALAPPDATA%\SignalLight
 ```
 
-主要文件：
+Main files:
 
-- `snapshot.json`: 当前聚合快照。
-- `sessions/*.json`: 每个任务或会话的最新状态。
-- `events/*.json`: 事件历史。
-- `diagnostics/latest-hook-context.json`: 最近一次 hook 输入、解析结果和映射状态。
-- `diagnostics/latest-hook-error.json`: 最近一次 hook 内部错误。
-- `diagnostics/latest-permission-watch.json`: 最近一次授权 watcher 结果。
-- `diagnostics/hooks/*.json`: 历史 hook 诊断。
-- `diagnostics/permission-watch/*.json`: 历史授权 watcher 诊断。
+- `snapshot.json`: current aggregate snapshot.
+- `sessions/*.json`: latest state for each task or session.
+- `events/*.json`: event history.
+- `diagnostics/latest-hook-context.json`: latest hook input, parse result, and mapped state.
+- `diagnostics/latest-hook-error.json`: latest internal hook error.
+- `diagnostics/latest-permission-watch.json`: latest authorization watcher result.
+- `diagnostics/hooks/*.json`: historical hook diagnostics.
+- `diagnostics/permission-watch/*.json`: historical authorization watcher diagnostics.
 
-## 5. 启动与运行
+## 5. Startup And Runtime
 
-推荐一键启动：
+Recommended one-command startup:
 
 ```powershell
 cd "B:\AI Traffic Signal"
 .\start-signal-light.ps1
 ```
 
-脚本会执行：
+The script performs:
 
-1. 定位 `dist\SignalLight-Portable-win-x64.zip`。
-2. 解压到 `dist\SignalLight-Portable-win-x64-run`。
-3. 执行 `install-hooks.ps1` 写入 Codex hooks。
-4. 结束已有 SignalLight App 实例。
-5. 后台启动 `dotnet app\SignalLight.App.dll`。
-6. 输出日志到 `.local\start-signal-light.out.log` 和 `.local\start-signal-light.err.log`。
+1. Locate `dist\SignalLight-Portable-win-x64.zip`.
+2. Extract it to `dist\SignalLight-Portable-win-x64-run`.
+3. Run `install-hooks.ps1` to write Codex hooks.
+4. Stop existing SignalLight App instances.
+5. Start `dotnet app\SignalLight.App.dll` in the background.
+6. Write logs to `.local\start-signal-light.out.log` and `.local\start-signal-light.err.log`.
 
-启动后可以关闭 PowerShell 终端。退出 SignalLight 应使用系统托盘菜单 `Exit`。
+After startup, the PowerShell terminal can be closed. To exit SignalLight, use the system tray menu item `Exit`.
 
-## 6. hooks 安装逻辑
+## 6. Hooks Installation Logic
 
-安装脚本写入：
+The installation script writes:
 
 ```text
 %USERPROFILE%\.codex\hooks.json
 ```
 
-如果设置了 `CODEX_HOME`，则写入：
+If `CODEX_HOME` is set, it writes:
 
 ```text
 %CODEX_HOME%\hooks.json
 ```
 
-当前 Codex lifecycle hook 命令形态：
+Current Codex lifecycle hook command shape:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File "<portable-root>\hooks\codex-hook.ps1" -EventName "UserPromptSubmit"
@@ -139,54 +139,54 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "<portable-root>\hooks\codex
 powershell -NoProfile -ExecutionPolicy Bypass -File "<portable-root>\hooks\codex-hook.ps1" -EventName "SessionStart"
 ```
 
-安装后必须在 Codex 中执行：
+After installation, run this in Codex:
 
 ```text
 /hooks
 ```
 
-然后信任 SignalLight 相关命令。未信任前，Codex 不会执行 hooks。
+Then trust the SignalLight commands. Before they are trusted, Codex will not execute the hooks.
 
-## 7. 已解决问题
+## 7. Resolved Issues
 
-| 问题 | 当前处理 |
+| Issue | Current handling |
 |---|---|
-| `hooks.json` 解析失败 | 安装脚本使用无 BOM UTF-8 写入，损坏文件会备份后重建 |
-| 中文任务标题乱码 | 中文文档已重写为 UTF-8；hook 诊断保留原始 payload 便于排查 |
-| `SignalLight.Agent.dll` 被 Smart App Control 拦截 | Codex lifecycle hooks 改为直接调用 PowerShell hook 脚本 |
-| 任务未完成就绿灯 | `SessionStart` ignored；完成只接受 Codex `Stop` 或明确取消/中断 |
-| 授权后一直黄灯 | 新增 `PreToolUse`、`PostToolUse` 和 watcher 诊断，但不使用不可靠进程检测 |
-| 用户未点 Yes 却变红 | 已移除命令行进程兜底检测，避免误匹配 watcher 自身 |
-| 完成后标题变成 `Codex` / `true` | Core 忽略占位标题并保留真实 prompt 节选 |
-| 完成后耗时变成 `0s` | 使用 `StartedAt` 计算运行/完成耗时 |
-| 多终端互相影响 | 优先使用 session/conversation/terminal/process id，避免随意完成其他活跃任务 |
-| 启动必须保留终端 | 一键脚本后台启动 `dotnet app\SignalLight.App.dll`，退出靠托盘 |
-| 抽屉信息冗余 | 抽屉只保留任务节选、状态、工作目录摘要和耗时 |
+| `hooks.json` parse failure | The installation script writes UTF-8 without BOM; damaged files are backed up and rebuilt |
+| Mojibake in Chinese task titles | Chinese documents were rewritten as UTF-8; hook diagnostics keep the raw payload for troubleshooting |
+| `SignalLight.Agent.dll` blocked by Smart App Control | Codex lifecycle hooks now call the PowerShell hook script directly |
+| Green before task completion | `SessionStart` is ignored; completion is accepted only from Codex `Stop` or explicit cancellation/interruption |
+| Yellow remains after authorization | Added `PreToolUse`, `PostToolUse`, and watcher diagnostics, but unreliable process detection is not used |
+| Red before the user clicked Yes | Removed command-line process fallback detection to avoid matching the watcher itself |
+| Title becomes `Codex` / `true` after completion | Core ignores placeholder titles and preserves the real prompt excerpt |
+| Duration becomes `0s` after completion | `StartedAt` is used to calculate running/completed duration |
+| Multiple terminals affect each other | Prefer session/conversation/terminal/process IDs and avoid completing other active tasks arbitrarily |
+| Startup requires keeping a terminal open | The one-command script starts `dotnet app\SignalLight.App.dll` in the background; exit through the tray |
+| Drawer information is redundant | The drawer keeps only task excerpt, state, workspace summary, and duration |
 
-## 8. 构建与打包
+## 8. Build And Packaging
 
-构建：
+Build:
 
 ```powershell
 cd "B:\AI Traffic Signal"
 dotnet build SignalLight.sln
 ```
 
-打包：
+Package:
 
 ```powershell
 cd "B:\AI Traffic Signal"
 .\tools\package-portable.ps1
 ```
 
-便携包输出：
+Portable package output:
 
 ```text
 dist\SignalLight-Portable-win-x64.zip
 dist\SignalLight-Portable-win-x64\
 ```
 
-便携包应包含：
+The portable package should contain:
 
 ```text
 app\SignalLight.App.dll
@@ -202,9 +202,9 @@ README.md
 LICENSE
 ```
 
-## 9. 验证
+## 9. Verification
 
-推荐验证：
+Recommended verification:
 
 ```powershell
 cd "B:\AI Traffic Signal"
@@ -213,105 +213,105 @@ dotnet test SignalLight.sln
 .\tools\package-portable.ps1
 ```
 
-当前已验证通过：
+Currently verified as passing:
 
 - `dotnet test SignalLight.sln`
 - `tools\validate-phase1.ps1`
 - `tools\package-portable.ps1`
-- 手动 `Agent emit --state completed/done/idle/green` 不会把快照切为完成
+- Manual `Agent emit --state completed/done/idle/green` does not switch the snapshot to completed
 
-真实 Codex 验证：
+Real Codex verification:
 
 ```powershell
 cd "B:\AI Traffic Signal"
 .\start-signal-light.ps1
 ```
 
-然后在 Codex 中执行：
+Then run this in Codex:
 
 ```text
 /hooks
 ```
 
-信任后提交真实 prompt，观察：
+After trusting hooks, submit a real prompt and observe:
 
 ```text
-提交 prompt -> 红灯闪烁
-权限请求 -> 黄灯闪烁
-授权通过并收到继续执行信号 -> 红灯闪烁
-任务结束或明确取消 -> 绿灯闪烁
+Submit prompt -> red blinking
+Permission request -> yellow blinking
+Authorization approved and continued-execution signal received -> red blinking
+Task ends or explicit cancellation occurs -> green blinking
 ```
 
-## 10. 诊断命令
+## 10. Diagnostic Commands
 
-查看最近 hook 输入：
+View the latest hook input:
 
 ```powershell
 Get-Content "$env:LOCALAPPDATA\SignalLight\diagnostics\latest-hook-context.json"
 ```
 
-查看授权 watcher：
+View the authorization watcher:
 
 ```powershell
 Get-Content "$env:LOCALAPPDATA\SignalLight\diagnostics\latest-permission-watch.json"
 ```
 
-查看当前快照：
+View the current snapshot:
 
 ```powershell
 Get-Content "$env:LOCALAPPDATA\SignalLight\snapshot.json"
 ```
 
-查看 session 文件：
+View session files:
 
 ```powershell
 Get-ChildItem "$env:LOCALAPPDATA\SignalLight\sessions"
 ```
 
-查看启动错误日志：
+View startup error logs:
 
 ```powershell
 Get-Content "B:\AI Traffic Signal\.local\start-signal-light.err.log"
 ```
 
-查看 hooks 配置：
+View hooks configuration:
 
 ```powershell
 Get-Content "$env:USERPROFILE\.codex\hooks.json"
 ```
 
-## 11. 平台判断
+## 11. Platform Assessment
 
-当前可直接使用：
+Currently directly usable:
 
 - Windows 10 / Windows 11 x64
-- .NET 8 Desktop Runtime 或 .NET 8 SDK
+- .NET 8 Desktop Runtime or .NET 8 SDK
 - Codex CLI
 - PowerShell
 
-当前不能完整直接使用：
+Currently not fully directly usable:
 
 - macOS
-- Ubuntu / 其他 Linux
+- Ubuntu / other Linux
 
-原因：
+Reasons:
 
-- `SignalLight.App` 是 WPF，目标是 Windows 桌面。
-- 当前便携包目标是 `win-x64`。
-- 启动脚本、hook 安装脚本和托盘行为按 Windows / PowerShell 设计。
+- `SignalLight.App` is WPF and targets the Windows desktop.
+- The current portable package target is `win-x64`.
+- Startup scripts, hook installation scripts, and tray behavior are designed for Windows / PowerShell.
 
-可迁移部分：
+Portable parts:
 
 - `SignalLight.Core`
 - `SignalLight.Storage`
 - `SignalLight.Agent`
 
-如果要跨平台，需要另行实现 Avalonia、MAUI、Electron、Tauri 或 Web UI，并改写 hook 安装脚本。
+Cross-platform support would require a separate Avalonia, MAUI, Electron, Tauri, or Web UI implementation, plus rewritten hook installation scripts.
 
-## 12. 文档维护规则
+## 12. Documentation Maintenance Rules
 
-- 当前事实以代码、脚本和 `docs/04-protocol/state-completion-policy.md` 为准。
-- 用户教程写“怎么用”。
-- 本文档写“如何复现、如何排查、当前为什么这样做”。
-- 历史进度文档可以保留过程，但如果与当前实现冲突，应在新的里程碑记录中明确更新。
-- 所有中文文档必须保存为 UTF-8。
+- Current facts are determined by the code, scripts, and `docs/04-protocol/state-completion-policy.md`.
+- The user tutorial explains how to use the product.
+- This document explains how to reproduce the project state, how to troubleshoot it, and why the current implementation is shaped this way.
+- Historical progress documents may keep process history, but if they conflict with the current implementation, new milestone records should explicitly update the current state.
+- All formal documentation must be saved as UTF-8.

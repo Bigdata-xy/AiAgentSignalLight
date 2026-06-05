@@ -1,49 +1,49 @@
-﻿# 通用 AI / Agent 交通信号灯产品设计方案
+# Generic AI / Agent Traffic Signal Product Design
 
-## 1. 产品定位
+## 1. Product Positioning
 
-SignalLight 是一个纯本地运行的 AI / Agent 状态信号灯。它通过适配器采集 AI 工具、Agent、网站或 CLI 的运行事件，维护本地会话状态，并用红、黄、绿交通灯 UI 展示“处理中、等待用户、已完成”等状态。
+SignalLight is a purely local AI / Agent state signal light. It uses adapters to collect runtime events from AI tools, agents, websites, or CLIs; maintains local session state; and displays states such as processing, waiting for user input, and completed through a red/yellow/green traffic-light UI.
 
-Codex 只是第一阶段适配对象，不是产品边界。后续应能接入其他需要等待或确认的 AI 网站、Agent 工具、CLI、IDE 插件和自动化系统。
+Codex is only the first-phase adapter target, not the product boundary. Later versions should connect to other AI websites, Agent tools, CLIs, IDE plugins, and automation systems that require waiting or confirmation.
 
-一句话定义：
+One-sentence definition:
 
 ```text
-SignalLight 是一个本地 AI / Agent 交通信号灯：适配器采集事件，Core 维护状态机，JSON 保存实时状态，桌面交通灯 UI 展示状态，任务徽标抽屉展示当前任务信息，托盘菜单提供诊断和操作入口。
+SignalLight is a local AI / Agent traffic signal: adapters collect events, Core maintains the state machine, JSON stores real-time state, the desktop traffic-light UI displays state, the task-badge drawer shows current task information, and the tray menu provides diagnostics and operation entry points.
 ```
 
-## 2. 设计目标
+## 2. Design Goals
 
-产品需要解决三个核心问题：
+The product needs to solve three core problems:
 
-1. 让用户一眼知道某个 AI / Agent 是否正在处理任务。
-2. 让用户及时发现某个 AI / Agent 是否正在等待输入、权限确认或人工接管。
-3. 让多个工具、多个项目、多个会话同时运行时的状态更加清晰。
+1. Let the user know at a glance whether an AI / Agent is processing a task.
+2. Let the user promptly notice whether an AI / Agent is waiting for input, permission confirmation, or manual takeover.
+3. Make state clearer when multiple tools, projects, and sessions are running at the same time.
 
-同时需要避免旧实现中已经暴露的问题：
+It also needs to avoid problems already exposed in the old implementation:
 
-- 中文文档编码损坏。
-- PowerShell hook 脚本过长，并把业务逻辑混在脚本里。
-- hook 脚本直接决定最终 UI 状态。
-- 状态协议过于简单，缺少 schema version。
-- 统计口径和多会话聚合口径混淆。
-- 诊断能力隐藏在文件里，不够产品化。
+- Damaged Chinese documentation encoding.
+- PowerShell hook scripts that are too long and mix business logic into scripts.
+- Hook scripts directly deciding final UI state.
+- State protocol that is too simple and lacks a schema version.
+- Confusion between statistics semantics and multi-session aggregation semantics.
+- Diagnostics hidden in files instead of being productized.
 
-## 3. 核心原则
+## 3. Core Principles
 
-### 3.1 交通灯 UI 必须保留
+### 3.1 The Traffic-Light UI Must Be Preserved
 
-主视觉必须是红、黄、绿交通灯：
+The primary visual must be a red/yellow/green traffic light:
 
-- 红灯：AI / Agent 正在处理。
-- 黄灯：等待用户输入、权限确认或人工操作。
-- 绿灯：已完成、空闲或无活跃任务。
+- Red: AI / Agent is processing.
+- Yellow: waiting for user input, permission confirmation, or manual action.
+- Green: completed, idle, or no active task.
 
-可以增强材质、动画、信息密度和任务抽屉，但不能把主 UI 改成状态条、仪表盘或普通卡片列表。
+Materials, animation, information density, and the task drawer can be enhanced, but the main UI must not become a status bar, dashboard, or ordinary card list.
 
-### 3.2 适配器只采集事件
+### 3.2 Adapters Only Collect Events
 
-适配器不直接决定最终 UI 状态。推荐边界：
+Adapters do not directly decide final UI state. Recommended boundary:
 
 ```text
 Adapters = event collectors
@@ -51,11 +51,11 @@ Core state engine = state decision maker
 UI = state renderer
 ```
 
-Codex hooks、浏览器脚本、CLI wrapper 都只负责把外部事件转换成统一事件协议。
+Codex hooks, browser scripts, and CLI wrappers are only responsible for converting external events into the unified event protocol.
 
-### 3.3 事件和状态分离
+### 3.3 Events And State Are Separate
 
-事件表示“发生了什么”：
+Events represent what happened:
 
 ```text
 TaskStarted
@@ -66,7 +66,7 @@ Heartbeat
 SessionEnded
 ```
 
-状态表示“当前应该如何展示”：
+State represents how the product should currently display it:
 
 ```text
 Thinking
@@ -78,62 +78,62 @@ Stale
 Unknown
 ```
 
-这样可以支持更多事件源，而不破坏 UI 逻辑。
+This allows more event sources without breaking UI logic.
 
-### 3.4 本地优先
+### 3.4 Local First
 
-所有核心数据默认保存在本地，不上传用户数据，不依赖服务器。
+All core data is stored locally by default. User data is not uploaded, and the product does not depend on a server.
 
-默认数据目录：
+Default data directory:
 
 ```text
 %LOCALAPPDATA%\SignalLight\
 ```
 
-网络功能只允许用户主动触发，例如检查更新或打开 release 页面。
+Network features should be triggered only by the user, such as checking for updates or opening a release page.
 
-### 3.5 诊断能力产品化
+### 3.5 Productize Diagnostics
 
-hook 类工具常见问题包括：
+Common problems for hook-based tools include:
 
-- hook 没有被信任。
-- hook 没有触发。
-- `CODEX_HOME` 不一致。
-- session id 不稳定。
-- 工作目录识别失败。
-- PowerShell 执行失败。
-- Agent 路径错误。
+- Hooks are not trusted.
+- Hooks do not trigger.
+- `CODEX_HOME` is inconsistent.
+- Session ID is unstable.
+- Workspace detection fails.
+- PowerShell execution fails.
+- Agent path is wrong.
 
-因此诊断不是附属功能，而是产品可靠性的核心组成部分。
+Therefore, diagnostics are not an accessory feature; they are a core part of product reliability.
 
-## 4. 总体架构
+## 4. Overall Architecture
 
-推荐链路：
+Recommended chain:
 
 ```text
 Adapters -> SignalLight.Agent -> SignalLight.Core -> SignalLight.Storage -> SignalLight.App
 ```
 
-职责边界：
+Responsibility boundaries:
 
-- Adapters：收集工具特定事件。
-- Agent：归一化入站事件。
-- Core：状态转换、聚合、过期策略。
-- Storage：保存 JSON snapshot、sessions、events 和 diagnostics。
-- App：展示交通灯 UI、任务徽标抽屉、诊断导出和操作入口。
+- Adapters: collect tool-specific events.
+- Agent: normalize inbound events.
+- Core: state transitions, aggregation, expiration policy.
+- Storage: save JSON snapshot, sessions, events, and diagnostics.
+- App: show traffic-light UI, task-badge drawer, diagnostics export, and operation entry points.
 
-MVP 不引入常驻后台服务。App 未启动时，Agent 仍然可以写入本地 JSON；App 下次启动后读取最新状态。
+The MVP does not introduce a resident background service. When the App is not running, Agent can still write local JSON; when the App starts again, it reads the latest state.
 
-## 5. 工程结构
+## 5. Engineering Structure
 
 ```text
 SignalLight/
   src/
-    SignalLight.App/        WPF 桌面 UI
-    SignalLight.Core/       状态机、会话聚合、协议模型
-    SignalLight.Agent/      本地事件写入器
-    SignalLight.Adapters/   Codex、浏览器、CLI 等适配边界
-    SignalLight.Storage/    JSON 存储和路径解析
+    SignalLight.App/        WPF desktop UI
+    SignalLight.Core/       state machine, session aggregation, protocol models
+    SignalLight.Agent/      local event writer
+    SignalLight.Adapters/   adapter boundaries for Codex, browsers, CLI, etc.
+    SignalLight.Storage/    JSON storage and path resolution
   tests/
     SignalLight.Core.Tests/
     SignalLight.Agent.Tests/
@@ -147,23 +147,23 @@ SignalLight/
   docs/
 ```
 
-## 6. 技术选型
+## 6. Technology Choices
 
-| 模块 | 技术 | 说明 |
+| Module | Technology | Notes |
 |---|---|---|
-| 桌面 UI | .NET 8 WPF | Windows 本地桌面体验成熟 |
-| 核心逻辑 | .NET class library | 状态机必须可单测 |
-| Local Agent | .NET console exe | 接收 hooks、CLI 和通用事件 |
-| Codex hook | PowerShell | 只负责转发和最小诊断 |
-| 默认存储 | JSON 文件 | 零依赖，便于调试和迁移 |
-| 可选增强 | SQLite | 后续用于历史和统计 |
-| UI 通知 | FileSystemWatcher | MVP 简单可靠 |
-| 发布 | Framework-dependent portable DLL zip | 通过 `dotnet` 启动，降低本地未签名 exe 被 Smart App Control 拦截的风险 |
-| 测试 | xUnit | 覆盖 Core、Agent、Storage |
+| Desktop UI | .NET 8 WPF | Mature local Windows desktop experience |
+| Core logic | .NET class library | State machine must be unit-testable |
+| Local Agent | .NET console exe | Receives hooks, CLI, and generic events |
+| Codex hook | PowerShell | Only forwarding and minimal diagnostics |
+| Default storage | JSON files | Zero dependency, easy to debug and migrate |
+| Optional enhancement | SQLite | Later history and statistics |
+| UI notification | FileSystemWatcher | Simple and reliable for MVP |
+| Release | Framework-dependent portable DLL zip | Started through `dotnet` to reduce Smart App Control blocking risk for local unsigned exe files |
+| Tests | xUnit | Cover Core, Agent, and Storage |
 
-## 7. 事件协议
+## 7. Event Protocol
 
-所有适配器应输出同一事件形态：
+All adapters should output the same event shape:
 
 ```json
 {
@@ -180,20 +180,20 @@ SignalLight/
 }
 ```
 
-Codex hook 映射：
+Codex hook mapping:
 
-| Codex 事件 | 通用事件 | 默认状态 |
+| Codex event | Generic event | Default state |
 |---|---|---|
 | `UserPromptSubmit` | `TaskStarted` | `Thinking` |
 | `PermissionRequest` | `UserActionRequired` | `Waiting` |
 | `PreToolUse` | `TaskStarted` | `Thinking` |
 | `PostToolUse` | `TaskStarted` | `Thinking` |
 | `Stop` | `TaskCompleted` | `Completed` |
-| `SessionStart` | ignored | 不写入任务状态 |
+| `SessionStart` | ignored | Does not write task state |
 
-## 8. 本地存储
+## 8. Local Storage
 
-默认目录：
+Default directory:
 
 ```text
 %LOCALAPPDATA%\SignalLight\
@@ -207,71 +207,71 @@ Codex hook 映射：
     latest-hook-context.json
 ```
 
-说明：
+Notes:
 
-- `snapshot.json` 保存聚合状态。
-- `sessions/*.json` 保存每个会话的最新状态。
-- `events/*.json` 保存事件流水。
-- `diagnostics/latest-hook-context.json` 保存最近一次 hook 诊断信息。
+- `snapshot.json` stores aggregate state.
+- `sessions/*.json` stores the latest state for each session.
+- `events/*.json` stores the event stream.
+- `diagnostics/latest-hook-context.json` stores the latest hook diagnostic information.
 
-写入应尽量使用临时文件再替换，降低半写入风险。
+Writes should use temporary files followed by replacement where possible, reducing the risk of partially written files.
 
-## 9. 状态聚合
+## 9. State Aggregation
 
-主灯状态按用户注意力优先级聚合：
+The main lamp state is aggregated by user-attention priority:
 
 ```text
 Waiting > Failed > Thinking > Completed > Idle > Stale > Unknown
 ```
 
-策略：
+Policy:
 
-- 只要有等待用户操作的会话，主灯显示黄灯。
-- 有失败会话且没有等待会话时，显示异常状态。
-- 有运行中会话且没有更高优先级会话时，显示红灯。
-- 只有已完成或空闲会话时，显示绿灯。
-- 运行中或等待中过久未更新的会话标记为 `Stale`。
-- 已完成会话超出保留窗口后从快照隐藏。
+- If any session is waiting for user action, the main lamp shows yellow.
+- If there is a failed session and no waiting session, show exception state.
+- If there is a running session and no higher-priority session, show red.
+- If only completed or idle sessions exist, show green.
+- Running or waiting sessions that have not updated for too long are marked `Stale`.
+- Completed sessions are hidden from the snapshot after the retention window.
 
-## 10. UI 设计
+## 10. UI Design
 
-主窗口必须保留交通灯本体：
+The main window must keep the traffic-light body:
 
 ```text
 SignalLight
-  红灯
-  黄灯
-  绿灯
+  red lamp
+  yellow lamp
+  green lamp
   completed / total
 ```
 
-当前实现采用小型悬浮窗口，默认只显示交通灯和右下角任务计数徽标。活跃灯应有呼吸或脉冲反馈，便于用户在余光中判断状态变化。
+The current implementation uses a small floating window that shows only the traffic light and the lower-right task-count badge by default. Active lamps should have breathing or pulse feedback so the user can notice state changes in peripheral vision.
 
-点击任务计数徽标后打开任务抽屉。抽屉任务行显示：
+Clicking the task-count badge opens the task drawer. Each drawer task row shows:
 
-- 任务 prompt 节选或工作目录名。
-- 当前状态徽标。
-- 工作目录摘要。
-- 运行中耗时或完成耗时。
-- 单行删除入口。
+- Task prompt excerpt or workspace directory name.
+- Current state badge.
+- Workspace summary.
+- Running duration or completed duration.
+- Single-row delete entry point.
 
-任务行不显示 `source/adapter`，避免把适配器细节暴露成主要用户信息。完成事件没有真实标题时，任务名应保留上一条 prompt 节选，不应回退成 `Codex`。
+Task rows do not show `source/adapter`, avoiding exposure of adapter details as primary user information. When a completion event has no real title, the task name should keep the previous prompt excerpt and should not fall back to `Codex`.
 
-托盘菜单提供：
+The tray menu provides:
 
-- Show / Hide。
-- Hooks > Install。
-- Hooks > Uninstall。
-- Diagnostics > Open data。
-- Diagnostics > Export。
-- Diagnostics > Clear done。
-- Exit。
+- Show / Hide.
+- Hooks > Install.
+- Hooks > Uninstall.
+- Diagnostics > Open data.
+- Diagnostics > Export.
+- Diagnostics > Clear done.
+- Exit.
 
-诊断细节不常驻主窗口。需要排查时通过托盘打开数据目录或导出诊断包。
+Diagnostic details do not stay permanently in the main window. When troubleshooting is needed, use the tray to open the data directory or export a diagnostics package.
 
-## 11. 分发方案
+## 11. Distribution Plan
 
-优先提供便携包：
+Prioritize a portable package:
 
 ```text
 SignalLight-Portable-win-x64.zip
@@ -284,14 +284,14 @@ SignalLight-Portable-win-x64.zip
   LICENSE
 ```
 
-推荐用户流程：
+Recommended user flow:
 
 ```powershell
 cd "B:\AI Traffic Signal"
 .\start-signal-light.ps1
 ```
 
-手工流程：
+Manual flow:
 
 ```powershell
 Expand-Archive SignalLight-Portable-win-x64.zip
@@ -299,75 +299,74 @@ Expand-Archive SignalLight-Portable-win-x64.zip
 dotnet .\app\SignalLight.App.dll
 ```
 
-然后在 Codex 中运行：
+Then run this in Codex:
 
 ```text
 /hooks
 ```
 
-信任 SignalLight hook 命令后，任意项目目录运行 Codex 都能上报状态。
+After trusting SignalLight hook commands, Codex can report state from any project directory.
 
-## 12. MVP 范围
+## 12. MVP Scope
 
-Phase 1 MVP 包括：
+Phase 1 MVP includes:
 
-- WPF 交通灯窗口。
-- SignalLight.Agent。
-- Codex hook PowerShell 模板。
-- hooks 安装和卸载脚本。
-- JSON 存储。
-- 基础诊断文件。
-- 自动化 Phase 1 模拟验证。
+- WPF traffic-light window.
+- SignalLight.Agent.
+- Codex hook PowerShell template.
+- Hook installation and uninstallation scripts.
+- JSON storage.
+- Basic diagnostic files.
+- Automated Phase 1 simulation validation.
 
-Phase 2 基础可用包括：
+Phase 2 base usable scope includes:
 
-- 小型悬浮交通灯 UI。
-- 活跃灯呼吸和脉冲动画。
-- 任务计数徽标。
-- 当前任务抽屉。
-- 单任务删除。
-- hook 安装和卸载入口。
-- 诊断导出。
-- 托盘入口。
-- session 过期策略。
-- completed session 清理。
+- Small floating traffic-light UI.
+- Breathing and pulse animation for active lamps.
+- Task-count badge.
+- Current task drawer.
+- Single-task deletion.
+- Hook installation and uninstallation entry points.
+- Diagnostics export.
+- Tray entry point.
+- Session expiration policy.
+- Completed-session cleanup.
 
-Phase 3 以后再做：
+Phase 3 and later:
 
-- 通用 file-drop adapter。
-- 浏览器 userscript adapter。
-- 浏览器扩展。
-- 安装器。
-- 更新机制。
+- Generic file-drop adapter.
+- Browser userscript adapter.
+- Browser extension.
+- Installer.
+- Update mechanism.
 
-## 13. 关键风险
+## 13. Key Risks
 
-| 风险 | 控制方式 |
+| Risk | Control |
 |---|---|
-| Codex hooks 输入变化 | 保留 raw payload，诊断显示原始输入 |
-| 用户未信任 hooks | App 显示安装状态和信任提示 |
-| Agent 路径错误 | hook 写入 `agentFound` 和 `agentPath` |
-| session id 不稳定 | 优先使用外部 session id，缺失时生成 fallback |
-| 文件监听丢事件 | App 启动时重新读取 snapshot 和 sessions |
-| 中文文档乱码 | 所有正式文档使用 UTF-8 重写和保存 |
+| Codex hook input changes | Preserve raw payload and show original input in diagnostics |
+| User has not trusted hooks | App shows installation status and trust guidance |
+| Agent path is wrong | Hook writes `agentFound` and `agentPath` |
+| Session ID is unstable | Prefer external session ID; generate fallback when missing |
+| File watcher misses events | App rereads snapshot and sessions on startup |
+| Mojibake in Chinese documentation | Rewrite and save all formal documents as UTF-8 |
 
-## 14. 推荐路线
+## 14. Recommended Route
 
-短期：
+Short term:
 
-1. 完成真实 Codex `/hooks` 信任验证。
-2. 验证真实红黄绿状态。
-3. 完成 Phase 1 验收落盘。
+1. Complete real Codex `/hooks` trust validation.
+2. Verify real red/yellow/green states.
+3. Persist Phase 1 acceptance results.
 
-中期：
+Medium term:
 
-1. 强化 Agent emit 合同。
-2. 增加 file-drop adapter。
-3. 增加非 Codex 接入示例。
+1. Harden the Agent emit contract.
+2. Add a file-drop adapter.
+3. Add a non-Codex integration example.
 
-长期：
+Long term:
 
-1. 浏览器 userscript。
-2. 浏览器扩展。
-3. 安装器和自动更新。
-
+1. Browser userscript.
+2. Browser extension.
+3. Installer and automatic updates.
