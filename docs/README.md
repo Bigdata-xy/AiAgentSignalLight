@@ -14,6 +14,7 @@ This directory is organized by document purpose.
 ## 01-planning
 
 - `phase-execution-plan.md`: Phase plan from project initialization through release quality.
+- `remote-ssh-local-signal-plan-20260608-142929.md`: Plan for lighting the local SignalLight indicator from remote SSH sessions through a local bridge and SSH reverse forwarding.
 
 ## 02-product-design
 
@@ -31,6 +32,7 @@ This directory is organized by document purpose.
 ## 05-engineering
 
 - `engineering-standards.md`: Engineering principles and implementation constraints.
+- `remote-ssh-local-signal-setup.md`: Implemented setup guide for sending remote SSH Codex / AI events back to the local SignalLight bridge.
 - `reproducible-project-state-guide.md`: Current canonical implementation guide covering architecture, fixed issues, reproducible startup, validation, diagnostics, and platform limits.
 - `smart-app-control-and-dll-startup.md`: Smart App Control / Code Integrity block analysis, exe vs DLL startup comparison, and the adopted DLL portable package strategy.
 
