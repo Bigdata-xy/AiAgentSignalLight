@@ -80,6 +80,19 @@ cd "B:\AI Traffic Signal"
 .\start-remote-signal-my-172.16.11.106.ps1
 ```
 
+也可以直接双击桌面快捷方式：
+
+```text
+SignalLight Remote 172.16.11.106
+```
+
+如果桌面快捷方式丢失，可以重新生成：
+
+```powershell
+cd "B:\AI Traffic Signal"
+.\tools\create-remote-signal-shortcut.ps1
+```
+
 这个脚本会依次完成：
 
 1. 启动本地 SignalLight 和 RemoteBridge。
