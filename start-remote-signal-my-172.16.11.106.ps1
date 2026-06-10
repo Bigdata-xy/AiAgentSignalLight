@@ -43,13 +43,15 @@ Invoke-Step -Name "Configure remote Codex hooks" -Script {
 
 Write-Host ""
 Write-Host "Remote SignalLight is configured."
-Write-Host "The next step opens an SSH reverse tunnel and keeps it running."
-Write-Host "Do not close that SSH window while you want remote Codex events to light the local indicator."
+Write-Host "The next step opens a monitored SSH reverse tunnel and keeps reconnecting it."
+Write-Host "Do not close this window while you want remote Codex events to light the local indicator."
 
 Invoke-Step -Name "Open SSH reverse tunnel" -Script {
     & (Join-Path $root "tools\start-remote-signal-ssh.ps1") `
         -HostName $hostName `
         -User $user `
         -SshPort $sshPort `
-        -IdentityFile $identityFile
+        -IdentityFile $identityFile `
+        -NoShell `
+        -Reconnect
 }

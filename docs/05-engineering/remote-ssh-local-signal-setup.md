@@ -102,14 +102,15 @@ The helper:
 
 - Ensures `%LOCALAPPDATA%\SignalLight\remote-bridge.json` exists.
 - Reads the bridge token.
-- Checks local bridge health.
+- Checks local bridge health before opening the tunnel.
 - Prints the remote environment variables.
 - Starts `ssh -R 37631:127.0.0.1:37631 user@remote-host`.
+- Uses `ExitOnForwardFailure=yes`, `ServerAliveInterval`, `ServerAliveCountMax`, and `TCPKeepAlive` so broken tunnels fail visibly.
 
 Equivalent manual command:
 
 ```powershell
-ssh -R 37631:127.0.0.1:37631 user@remote-host
+ssh -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o TCPKeepAlive=yes -R 37631:127.0.0.1:37631 user@remote-host
 ```
 
 Use `-NoShell` when only a tunnel is needed:
@@ -117,6 +118,14 @@ Use `-NoShell` when only a tunnel is needed:
 ```powershell
 .\tools\start-remote-signal-ssh.ps1 -HostName remote-host -User user -NoShell
 ```
+
+Use `-Reconnect` for a monitored tunnel that restarts after disconnects:
+
+```powershell
+.\tools\start-remote-signal-ssh.ps1 -HostName remote-host -User user -NoShell -Reconnect
+```
+
+The server-specific wrapper uses `-NoShell -Reconnect` by default.
 
 ## 4. Remote Environment
 
@@ -215,6 +224,13 @@ Remote hook diagnostics:
 
 ```text
 ~/.signal-light/diagnostics/latest-remote-hook-error.txt
+```
+
+Tunnel monitor diagnostics:
+
+```text
+.local\remote-tunnel.status.json
+.local\remote-tunnel.log
 ```
 
 ## 8. Security Notes
