@@ -109,6 +109,37 @@ if command -v curl >/dev/null 2>&1; then
     -H "Content-Type: application/json" \
     --data "$body" >/dev/null 2>&1
   code=$?
+elif command -v python3 >/dev/null 2>&1; then
+  SIGNAL_LIGHT_BRIDGE_URL_VALUE="$bridge_url" \
+  SIGNAL_LIGHT_BRIDGE_TOKEN_VALUE="$bridge_token" \
+  SIGNAL_LIGHT_REQUEST_BODY="$body" \
+  python3 - <<'PY' >/dev/null 2>&1
+import os
+import sys
+import urllib.error
+import urllib.request
+
+url = os.environ.get("SIGNAL_LIGHT_BRIDGE_URL_VALUE", "")
+token = os.environ.get("SIGNAL_LIGHT_BRIDGE_TOKEN_VALUE", "")
+body = os.environ.get("SIGNAL_LIGHT_REQUEST_BODY", "").encode("utf-8")
+
+request = urllib.request.Request(
+    url,
+    data=body,
+    headers={
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    },
+    method="POST",
+)
+
+try:
+    with urllib.request.urlopen(request, timeout=5) as response:
+        sys.exit(0 if 200 <= response.status < 300 else 1)
+except Exception:
+    sys.exit(1)
+PY
+  code=$?
 else
   code=127
 fi

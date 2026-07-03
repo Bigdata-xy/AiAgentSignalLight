@@ -1,10 +1,10 @@
 $ErrorActionPreference = "Stop"
 
 $root = $PSScriptRoot
-$hostName = "172.16.11.106"
+$hostName = "172.16.11.41"
 $user = "xiaoyao"
-$sshPort = 3368
-$remoteLabel = "my-172.16.11.106"
+$sshPort = 3390
+$remoteLabel = "my-172.16.11.41"
 $identityFile = Join-Path $env:USERPROFILE ".ssh\id_ed25519_signal_light"
 
 function Invoke-Step {
